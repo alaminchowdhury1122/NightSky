@@ -1,534 +1,751 @@
 import math
-import sys
-import numpy as np
-import pygame
+import random
+import tkinter as tk
 
-# --- ASTRONOMICAL DATA (REAL-WORLD METRICS + ESTIMATED TOTALS) ---
-COSMOS_SUMMARY = {
-    "observable_estimate": "Few hundred billion to ~2 trillion galaxies",
-    "catalogued_note": "Tens of millions catalogued; Euclid alone logged ~26M in DR1 (1.5B+ planned)",
-    "observable_diameter": "93 billion light-years",
-}
+COSMOS_SUMMARY = (
+    "Observable Universe: ~hundreds of billions to ~2 trillion galaxies (~93B ly wide) | "
+    "Catalogued: Tens of millions (Euclid DR1 ~26M, 1.5B+ planned)"
+)
 
 BODIES = [
     {
         "name": "Sun",
-        "kind": "Star (G2V Main-Sequence)",
+        "kind": "G2V Main-Sequence Star",
         "orbit_r": 0.0,
         "orbit_speed": 0.0,
-        "radius": 24.0,
-        "color": (255, 204, 64),
-        "glow": (255, 150, 20),
-        "distance": "0 AU (Solar System Center)",
-        "temp": "5,500 °C (photosphere) / 15M °C (core)",
-        "diameter": "1,392,700 km (109x Earth)",
-        "details": "Contains 99.86% of the Solar System's mass. Fuses ~600 million tons of hydrogen into helium every second.",
+        "radius": 22.0,
+        "color": "#fbbf24",
+        "dist": "0.00 AU (System Center)",
+        "temp": "5,500 °C photosphere / 15M °C core",
+        "diam": "1,392,700 km",
+        "comp": "73.4% Hydrogen, 25.0% Helium, 1.6% Heavy Elements",
+        "features": "Granulation cells, sunspots, coronal loops, solar wind",
+        "discovery": "Studied across history; sampled by Parker Solar Probe",
+        "info": "99.86% of Solar System mass; fuses ~600M tons of H into He every second.",
     },
     {
         "name": "Mercury",
         "kind": "Terrestrial Planet",
-        "orbit_r": 65.0,
+        "orbit_r": 62.0,
         "orbit_speed": 0.022,
-        "radius": 5.5,
-        "color": (175, 170, 165),
-        "glow": None,
-        "distance": "0.39 AU (~58M km from Sun)",
+        "radius": 5.0,
+        "color": "#94a3b8",
+        "dist": "0.39 AU (~58M km)",
         "temp": "-180 °C to 430 °C",
-        "diameter": "4,879 km",
-        "details": "Smallest planet with a massive iron core and virtually no atmosphere to hold heat.",
+        "diam": "4,879 km",
+        "comp": "Oversized iron-nickel core (~85% radius), silicate mantle",
+        "features": "Caloris Basin (1,550 km), lobate scarps, polar crater ice",
+        "discovery": "Mapped by Mariner 10 (1974) & MESSENGER (2011–2015)",
+        "info": "Smallest planet with a massive iron core and negligible atmosphere.",
     },
     {
         "name": "Venus",
         "kind": "Terrestrial Planet",
-        "orbit_r": 100.0,
+        "orbit_r": 96.0,
         "orbit_speed": 0.015,
-        "radius": 9.0,
-        "color": (235, 195, 120),
-        "glow": (210, 165, 85),
-        "distance": "0.72 AU (~108M km from Sun)",
-        "temp": "~465 °C (runaway greenhouse)",
-        "diameter": "12,104 km",
-        "details": "Rotates backward (retrograde) with thick sulfuric acid clouds and ~92x Earth's surface pressure.",
+        "radius": 8.5,
+        "color": "#fcd34d",
+        "dist": "0.72 AU (~108M km)",
+        "temp": "~465 °C surface",
+        "diam": "12,104 km",
+        "comp": "96.5% CO2, 3.5% N2 atmosphere with sulfuric acid clouds",
+        "features": "Maxwell Montes, volcanic plains, retrograde 243-day spin",
+        "discovery": "First reached by Mariner 2 (1962); radar-mapped by Magellan",
+        "info": "Runaway CO2 greenhouse, sulfuric acid clouds, slow retrograde rotation.",
     },
     {
         "name": "Earth",
         "kind": "Terrestrial Planet",
-        "orbit_r": 145.0,
+        "orbit_r": 140.0,
         "orbit_speed": 0.010,
-        "radius": 10.0,
-        "color": (65, 155, 255),
-        "glow": (70, 180, 255),
-        "distance": "1.00 AU (~149.6M km from Sun)",
-        "temp": "~15 °C global average",
-        "diameter": "12,742 km",
-        "details": "Only known world with liquid surface oceans, plate tectonics, a protective magnetosphere, and life.",
+        "radius": 9.5,
+        "color": "#38bdf8",
+        "dist": "1.00 AU (~149.6M km)",
+        "temp": "~15 °C mean",
+        "diam": "12,742 km",
+        "comp": "78.1% N2, 20.9% O2 atmosphere; silicate crust & iron core",
+        "features": "71% liquid water oceans, plate tectonics, Moon (Luna)",
+        "discovery": "Continuously monitored by global Earth observation fleets",
+        "info": "Liquid water oceans, plate tectonics, magnetosphere, Moon, and biosphere.",
     },
     {
         "name": "Mars",
         "kind": "Terrestrial Planet",
-        "orbit_r": 190.0,
+        "orbit_r": 184.0,
         "orbit_speed": 0.008,
-        "radius": 7.2,
-        "color": (220, 95, 60),
-        "glow": (190, 75, 45),
-        "distance": "1.52 AU (~228M km from Sun)",
-        "temp": "-63 °C average",
-        "diameter": "6,779 km",
-        "details": "Iron-oxide dust gives its rust hue; home to Olympus Mons and Valles Marineris.",
+        "radius": 6.8,
+        "color": "#f87171",
+        "dist": "1.52 AU (~228M km)",
+        "temp": "-63 °C mean",
+        "diam": "6,779 km",
+        "comp": "95.3% CO2 thin atmosphere; iron-oxide regolith & basalt",
+        "features": "Olympus Mons (21.9 km), Valles Marineris, Phobos & Deimos",
+        "discovery": "Explored by Curiosity, Perseverance rovers & Ingenuity",
+        "info": "Iron-oxide dust, Olympus Mons (~21.9 km), Valles Marineris, Phobos & Deimos.",
     },
     {
         "name": "Jupiter",
         "kind": "Gas Giant",
-        "orbit_r": 265.0,
+        "orbit_r": 255.0,
         "orbit_speed": 0.0045,
-        "radius": 20.0,
-        "color": (215, 175, 130),
-        "glow": (180, 140, 100),
-        "distance": "5.20 AU (~778M km from Sun)",
-        "temp": "-110 °C (cloud tops)",
-        "diameter": "139,820 km",
-        "details": "Most massive planet (~2.5x all other planets combined), famous for zonal bands and the Great Red Spot.",
+        "radius": 18.5,
+        "color": "#fdba74",
+        "dist": "5.20 AU (~778M km)",
+        "temp": "-110 °C cloud tops",
+        "diam": "139,820 km",
+        "comp": "~90% Hydrogen, ~10% Helium, ammonia & water cloud decks",
+        "features": "Great Red Spot anticyclone, 95 moons (Io, Europa, Ganymede)",
+        "discovery": "Galilean moons found in 1610; studied by Voyager, Galileo & Juno",
+        "info": "Most massive planet (~2.5x all other planets combined), Great Red Spot, 95 moons.",
     },
     {
         "name": "Saturn",
         "kind": "Gas Giant",
-        "orbit_r": 345.0,
+        "orbit_r": 330.0,
         "orbit_speed": 0.0032,
-        "radius": 16.5,
-        "color": (230, 205, 145),
-        "glow": None,
-        "distance": "9.58 AU (~1.43B km from Sun)",
-        "temp": "-140 °C (cloud tops)",
-        "diameter": "116,460 km (excluding rings)",
-        "details": "Iconic ice-and-rock ring system spanning hundreds of thousands of kilometers with low mean density.",
+        "radius": 15.5,
+        "color": "#fde68a",
+        "dist": "9.58 AU (~1.43B km)",
+        "temp": "-140 °C cloud tops",
+        "diam": "116,460 km",
+        "comp": "96.3% Hydrogen, 3.25% Helium; 99.9% water-ice rings",
+        "features": "Main rings (A–G), Cassini Division, 146 moons incl. Titan",
+        "discovery": "Rings resolved by Huygens (1655); explored by Cassini–Huygens",
+        "info": "Water-ice ring system, Cassini Division, low density, 146 moons incl. Titan.",
+    },
+    {
+        "name": "Uranus",
+        "kind": "Ice Giant",
+        "orbit_r": 395.0,
+        "orbit_speed": 0.0022,
+        "radius": 11.5,
+        "color": "#67e8f9",
+        "dist": "19.2 AU (~2.87B km)",
+        "temp": "-195 °C cloud tops",
+        "diam": "50,724 km",
+        "comp": "H2, He, CH4 gas over water-ammonia-methane ice mantle",
+        "features": "13 narrow dark rings, 28 moons, extreme ~97.8° axial tilt",
+        "discovery": "Discovered by William Herschel (1781); visited by Voyager 2",
+        "info": "Water/ammonia/methane ice mantle, ~97.8° axial tilt, 13 narrow rings, 28 moons.",
+    },
+    {
+        "name": "Neptune",
+        "kind": "Ice Giant",
+        "orbit_r": 455.0,
+        "orbit_speed": 0.0016,
+        "radius": 11.2,
+        "color": "#60a5fa",
+        "dist": "30.1 AU (~4.50B km)",
+        "temp": "-201 °C cloud tops",
+        "diam": "49,244 km",
+        "comp": "H2, He, CH4 upper atmosphere over dense icy mantle",
+        "features": "Supersonic >2,000 km/h winds, Great Dark Spot, Triton",
+        "discovery": "Predicted mathematically in 1846; visited by Voyager 2",
+        "info": "Supersonic >2,000 km/h winds, Great Dark Spot storms, retrograde moon Triton.",
     },
 ]
 
 GALAXIES = [
     {
         "name": "Milky Way",
-        "gtype": "Barred Spiral (SBbc)",
-        "pos": np.array([0.0, 0.0, 0.0]),
-        "stars": "100–400 billion stars",
-        "size": "~100,000 light-years across",
-        "dist": "Home galaxy (Solar System ~27,000 ly from center)",
-        "color": (150, 195, 255),
-        "details": "Our home galaxy in the Local Group, featuring a central bar, spiral arms, and Sagittarius A* at its core.",
+        "kind": "Barred Spiral Galaxy (SBbc)",
+        "pos": (0.0, -40.0, 0.0),
+        "color": "#93c5fd",
+        "dist": "Home (Sun ~27k ly from core)",
+        "temp": "Core gas: ~10K–50K K",
+        "diam": "~100,000 ly across",
+        "comp": "100–400B stars, molecular H2 clouds, dark matter halo",
+        "features": "Sagittarius A* (4.3M M☉ black hole), Orion Arm, 50+ dwarf satellites",
+        "discovery": "Resolved into stars by Galileo (1610); mapped in 3D by ESA Gaia",
+        "info": "Our home barred-spiral galaxy in the Local Group with Sagittarius A* at its center.",
     },
     {
         "name": "Andromeda (M31)",
-        "gtype": "Spiral (SA(s)b)",
-        "pos": np.array([1400.0, 280.0, -1900.0]),
-        "stars": "~1 trillion stars",
-        "size": "~152,000 light-years across",
-        "dist": "~2.5 million light-years from Earth",
-        "color": (255, 210, 155),
-        "details": "Largest major galaxy in the Local Group; visible to the naked eye in dark skies and approaching a merger.",
+        "kind": "Spiral Galaxy (SA(s)b)",
+        "pos": (950.0, 180.0, -1250.0),
+        "color": "#fcd34d",
+        "dist": "~2.5M ly from Earth",
+        "temp": "Bulge stars: ~4,500 K",
+        "diam": "~152,000 ly across",
+        "comp": "~1 trillion stars, double nucleus, ionized gas halo",
+        "features": "M32 & M110 satellite galaxies, blueshifted approach (~110 km/s)",
+        "discovery": "Recorded by al-Sufi (964 AD); distance proved by Hubble (1923)",
+        "info": "Largest major galaxy in the Local Group; visible to the naked eye in dark skies.",
     },
     {
         "name": "Triangulum (M33)",
-        "gtype": "Unbarred Spiral (SA(s)cd)",
-        "pos": np.array([1750.0, -320.0, -1450.0]),
-        "stars": "~40 billion stars",
-        "size": "~60,000 light-years across",
-        "dist": "~2.7–3.0 million light-years from Earth",
-        "color": (140, 215, 255),
-        "details": "Third-largest member of the Local Group and a rich star-forming spiral in the constellation Triangulum.",
+        "kind": "Unbarred Spiral (SA(s)cd)",
+        "pos": (1180.0, -210.0, -920.0),
+        "color": "#67e8f9",
+        "dist": "~2.7–3.0M ly from Earth",
+        "temp": "H II regions: ~10,000 K",
+        "diam": "~60,000 ly across",
+        "comp": "~40 billion stars, hydrogen gas, young O/B star clusters",
+        "features": "NGC 604 giant H II star-forming nursery (~1,500 ly wide)",
+        "discovery": "Catalogued by Charles Messier in 1764; 3rd Local Group spiral",
+        "info": "Third-largest member of the Local Group and a rich star-forming spiral.",
     },
     {
         "name": "Sombrero (M104)",
-        "gtype": "Unbarred Spiral / Lenticular",
-        "pos": np.array([-1850.0, 450.0, -1600.0]),
-        "stars": "~800 billion stars",
-        "size": "~50,000 light-years across",
-        "dist": "~29.3 million light-years from Earth",
-        "color": (255, 225, 175),
-        "details": "Known for its bright central bulge, prominent dust ring, and unusually large globular cluster system.",
+        "kind": "Spiral / Lenticular Galaxy",
+        "pos": (-1220.0, 260.0, -1050.0),
+        "color": "#fdba74",
+        "dist": "~29.3M ly from Earth",
+        "temp": "Core bulge: ~5,000 K",
+        "diam": "~50,000 ly across",
+        "comp": "~800 billion stars, dense central bulge, PAH dust lane",
+        "features": "1-billion-M☉ central black hole, ~2,000 globular star clusters",
+        "discovery": "Discovered by Pierre Méchain (1781); imaged by Hubble & Spitzer",
+        "info": "Famous for its brilliant luminous core and broad symmetric dust ring.",
     },
     {
         "name": "Messier 87 (M87)",
-        "gtype": "Supergiant Elliptical (E0-1pec)",
-        "pos": np.array([-1500.0, -520.0, 1750.0]),
-        "stars": "Several trillion stars",
-        "size": "~120,000 light-years across",
-        "dist": "~53.5 million light-years from Earth",
-        "color": (255, 190, 125),
-        "details": "Anchor of the Virgo Cluster; houses M87*, the supermassive black hole first imaged by the Event Horizon Telescope.",
+        "kind": "Supergiant Elliptical (E0-1)",
+        "pos": (-1020.0, -320.0, 1140.0),
+        "color": "#fca5a5",
+        "dist": "~53.5M ly (Virgo Cluster)",
+        "temp": "Jet plasma: millions K",
+        "diam": "~120,000 ly across",
+        "comp": "Several trillion old stars, hot X-ray intracluster gas",
+        "features": "M87* (6.5B M☉ black hole), 5,000-ly relativistic plasma jet",
+        "discovery": "M87* shadow imaged by Event Horizon Telescope (2019)",
+        "info": "Dominant elliptical galaxy of the Virgo Cluster with supermassive black hole M87*.",
     },
     {
         "name": "Large Magellanic Cloud",
-        "gtype": "Irregular Dwarf (SB(s)m)",
-        "pos": np.array([420.0, -240.0, 520.0]),
-        "stars": "~30 billion stars",
-        "size": "~32,200 light-years across",
-        "dist": "~163,000 light-years from Earth",
-        "color": (165, 210, 255),
-        "details": "Brightest satellite galaxy orbiting the Milky Way, prominent in the southern hemisphere sky.",
+        "kind": "Irregular Dwarf Galaxy",
+        "pos": (280.0, -140.0, 340.0),
+        "color": "#a5f3fc",
+        "dist": "~163,000 ly from Earth",
+        "temp": "Tarantula Neb.: ~10,000+ K",
+        "diam": "~32,200 ly across",
+        "comp": "~30 billion stars, metal-poor gas, young supergiants",
+        "features": "30 Doradus (Tarantula Nebula), Supernova 1987A remnant",
+        "discovery": "Documented by southern navigators & Magellan's 1519 expedition",
+        "info": "Prominent satellite galaxy orbiting the Milky Way in the southern sky.",
     },
 ]
 
-# Bright night-sky stars & constellations for Human Sky View (azimuth_deg, alt_deg, mag_size, color, label)
 SKY_STARS = [
-    ("Sirius", 155, 28, 4.2, (195, 225, 255)),
-    ("Betelgeuse", 115, 42, 3.8, (255, 155, 105)),
-    ("Rigel", 132, 24, 3.9, (180, 215, 255)),
-    ("Bellatrix", 112, 34, 2.5, (185, 220, 255)),
-    ("Alnilam", 122, 33, 2.4, (195, 220, 255)),
-    ("Polaris", 355, 58, 2.8, (255, 245, 215)),
-    ("Vega", 65, 66, 3.6, (205, 230, 255)),
-    ("Dubhe", 325, 64, 2.6, (255, 210, 160)),
-    ("Merak", 318, 56, 2.3, (215, 230, 255)),
-    ("Aldebaran", 92, 46, 3.2, (255, 165, 110)),
-]
-
-CONSTELLATION_LINES = [
-    # Orion rough outline
-    ((112, 34), (115, 42)),
-    ((115, 42), (122, 33)),
-    ((122, 33), (132, 24)),
-    ((132, 24), (112, 34)),
-    # Big Dipper / Ursa Major pointer
-    ((318, 56), (325, 64)),
-    ((325, 64), (355, 58)),
+    ("Sirius", 155, 28, 4, "#e0f2fe", "8.6 ly", "9,940 K", "2.4M km", "Brightest star in Earth's night sky (Canis Major)."),
+    ("Betelgeuse", 115, 42, 4, "#ff9d5c", "548 ly", "3,500 K", "1,234M km", "Massive red supergiant marking Orion's right shoulder."),
+    ("Rigel", 132, 24, 4, "#a5d8ff", "860 ly", "12,100 K", "109M km", "Luminous blue supergiant marking Orion's foot."),
+    ("Bellatrix", 112, 34, 3, "#bae6fd", "250 ly", "22,000 K", "8.0M km", "Blue giant forming the left shoulder of Orion."),
+    ("Alnilam", 122, 33, 3, "#bae6fd", "2,000 ly", "27,000 K", "45M km", "Central blue supergiant jewel of Orion's Belt."),
+    ("Polaris", 355, 58, 3, "#fef08a", "433 ly", "6,015 K", "52M km", "The North Star, aligned closely with Earth's rotational axis."),
+    ("Vega", 65, 66, 4, "#bae6fd", "25 ly", "9,602 K", "3.3M km", "Bright A0V star in Lyra and vertex of the Summer Triangle."),
+    ("Dubhe", 325, 64, 3, "#fde047", "123 ly", "4,660 K", "41M km", "Big Dipper pointer star aiming toward Polaris."),
+    ("Merak", 318, 56, 3, "#f8fafc", "79.7 ly", "9,377 K", "4.2M km", "Lower pointer star of the Big Dipper bowl."),
+    ("Aldebaran", 92, 46, 3, "#fb923c", "65 ly", "3,910 K", "61M km", "Fiery orange giant eye of Taurus the Bull."),
 ]
 
 
-def generate_starfield(n_stars=2200, radius=4200.0, seed=42):
-    rng = np.random.default_rng(seed)
-    u = rng.uniform(-1, 1, n_stars)
-    theta = rng.uniform(0, 2 * np.pi, n_stars)
-    r = radius * (rng.uniform(0.55, 1.0, n_stars) ** (1 / 3))
-    sin_phi = np.sqrt(np.maximum(0.0, 1.0 - u * u))
-    pts = np.column_stack([r * sin_phi * np.cos(theta), r * u, r * sin_phi * np.sin(theta)])
-    palette = np.array([
-        [200, 220, 255],
-        [255, 250, 240],
-        [255, 215, 170],
-        [170, 205, 255],
-        [255, 180, 140],
-    ], dtype=np.float32)
-    cols = palette[rng.integers(0, len(palette), n_stars)]
-    sizes = rng.choice([1, 1, 1, 2, 2, 3], n_stars)
-    return pts, cols, sizes
+class NightSkyApp:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("3D Universe & Night Sky Explorer (Python)")
+        self.root.geometry("1280x780")
 
+        self.canvas = tk.Canvas(root, bg="#02040a", highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
 
-def generate_deep_galaxies(n_gal=420, min_r=1200.0, max_r=4500.0, seed=108):
-    rng = np.random.default_rng(seed)
-    u = rng.uniform(-1, 1, n_gal)
-    theta = rng.uniform(0, 2 * np.pi, n_gal)
-    dist = rng.uniform(min_r, max_r, n_gal)
-    sin_phi = np.sqrt(np.maximum(0.0, 1.0 - u * u))
-    pts = np.column_stack([dist * sin_phi * np.cos(theta), dist * u, dist * sin_phi * np.sin(theta)])
-    palette = np.array([
-        [255, 205, 145],
-        [165, 205, 255],
-        [240, 225, 200],
-        [255, 175, 130],
-    ], dtype=np.float32)
-    cols = palette[rng.integers(0, len(palette), n_gal)]
-    radii = rng.uniform(2.0, 5.5, n_gal)
-    return pts, cols, radii
+        rng = random.Random(42)
+        self.stars = [
+            (
+                f"HD-{10000 + i}",
+                rng.uniform(-2600, 2600),
+                rng.uniform(-2600, 2600),
+                rng.uniform(-2600, 2600),
+                rng.choice(["#bae6fd", "#f8fafc", "#fef08a", "#fdba74"]),
+            )
+            for i in range(900)
+        ]
+        self.deep_galaxies = [
+            (
+                f"UDF-{2000 + i}",
+                rng.uniform(-2400, 2400),
+                rng.uniform(-2400, 2400),
+                rng.uniform(-2400, 2400),
+                rng.choice(["#fde68a", "#93c5fd", "#fbcfe8"]),
+            )
+            for i in range(220)
+        ]
 
+        self.cam_x, self.cam_y, self.cam_z = 0.0, 190.0, 520.0
+        self.yaw = 0.0
+        self.pitch = -0.32
+        self.fov = 60.0
+        self.sky_mode = False
+        self.sim_time = 0.0
+        self.selected = BODIES[3]  # Default: Earth
+        self.fly_target_cam = None
+        self.fly_look_target = None
 
-def project_point(world_pt, cam_pos, yaw, pitch, fov, w, h):
-    rel = world_pt - cam_pos
-    cy, sy = math.cos(yaw), math.sin(yaw)
-    cp, sp = math.cos(pitch), math.sin(pitch)
+        # Movable HUD Dossier Card coordinates
+        self.card_x = None
+        self.card_y = 56
+        self.card_w = 360
+        self.card_h = 330
+        self.dragging_card = False
+        self.card_drag_offset = (0, 0)
 
-    # Yaw around Y axis
-    x1 = cy * rel[0] - sy * rel[2]
-    z1 = sy * rel[0] + cy * rel[2]
-    y1 = rel[1]
+        self.press_pos = None
+        self.drag_last = None
+        self.hit_targets = []  # List of (sx, sy, radius, payload, world_pos)
 
-    # Pitch around X axis
-    y2 = cp * y1 - sp * z1
-    z2 = sp * y1 + cp * z1
-    x2 = x1
+        self.canvas.bind("<ButtonPress-1>", self.on_press)
+        self.canvas.bind("<B1-Motion>", self.on_drag)
+        self.canvas.bind("<ButtonRelease-1>", self.on_release)
+        self.canvas.bind("<MouseWheel>", self.on_wheel)
+        self.canvas.bind("<Button-4>", self.on_wheel_up)
+        self.canvas.bind("<Button-5>", self.on_wheel_down)
+        root.bind("<KeyPress-v>", lambda _e: self.toggle_sky_mode())
+        root.bind("<KeyPress-V>", lambda _e: self.toggle_sky_mode())
+        root.bind("<space>", lambda _e: self.reset_view())
+        for idx, body in enumerate(BODIES):
+            root.bind(str(idx + 1), lambda _e, b=body: self.fly_to_body(b))
 
-    if z2 <= 1.0:
-        return None
-    scale = (h * 0.5) / math.tan(math.radians(fov * 0.5)) / z2
-    sx = int(w * 0.5 + x2 * scale)
-    sy_px = int(h * 0.5 - y2 * scale)
-    return sx, sy_px, z2, scale
+        self.loop()
 
+    def toggle_sky_mode(self):
+        self.sky_mode = not self.sky_mode
+        self.fly_target_cam = None
+        self.fov = 55.0 if self.sky_mode else 60.0
 
-def draw_sky_view(screen, font, small_font, yaw, pitch, fov, sim_time):
-    w, h = screen.get_size()
-    screen.fill((5, 9, 20))
+    def reset_view(self):
+        self.sky_mode = False
+        self.fov = 60.0
+        self.fly_target_cam = (0.0, 190.0, 520.0)
+        self.fly_look_target = (0.0, 0.0, 0.0)
 
-    # Subtle horizon band
-    horizon_y = int(h * 0.5 + math.sin(pitch) * h * 0.65)
-    if 0 <= horizon_y <= h:
-        pygame.draw.rect(screen, (14, 24, 38), (0, horizon_y, w, h - horizon_y))
-        pygame.draw.line(screen, (65, 115, 155), (0, horizon_y), (w, horizon_y), 2)
+    def aim_camera_at(self, tx, ty, tz):
+        dx = tx - self.cam_x
+        dy = ty - self.cam_y
+        dz = tz - self.cam_z
+        horiz = math.hypot(dx, dz)
+        if horiz > 1e-4 or abs(dy) > 1e-4:
+            self.yaw = math.atan2(dx, dz)
+            self.pitch = max(-1.4, min(1.4, -math.atan2(dy, max(1e-4, horiz))))
 
-    def sky_to_screen(az_deg, alt_deg):
-        d_az = ((az_deg - math.degrees(yaw) + 180) % 360) - 180
-        d_alt = alt_deg - math.degrees(pitch)
-        px_per_deg = (w / fov)
-        sx = int(w * 0.5 + d_az * px_per_deg)
-        sy = int(h * 0.5 - d_alt * px_per_deg)
-        return sx, sy
+    def start_flight(self, world_pos, stand_off, payload):
+        self.selected = payload
+        tx, ty, tz = world_pos
+        vx = self.cam_x - tx
+        vy = self.cam_y - ty
+        vz = self.cam_z - tz
+        norm = math.sqrt(vx * vx + vy * vy + vz * vz)
+        if norm < 1e-3:
+            vx, vy, vz, norm = 0.0, 0.4, 1.0, 1.077
+        cx = tx + (vx / norm) * stand_off
+        cy = ty + max(stand_off * 0.28, (vy / norm) * stand_off)
+        cz = tz + (vz / norm) * stand_off
+        self.fly_target_cam = (cx, cy, cz)
+        self.fly_look_target = (tx, ty, tz)
 
-    # Constellation stick figures
-    for p1, p2 in CONSTELLATION_LINES:
-        s1 = sky_to_screen(*p1)
-        s2 = sky_to_screen(*p2)
-        pygame.draw.line(screen, (55, 95, 145), s1, s2, 1)
+    def fly_to_body(self, body):
+        self.sky_mode = False
+        angle = self.sim_time * body["orbit_speed"]
+        bx = math.cos(angle) * body["orbit_r"]
+        bz = math.sin(angle) * body["orbit_r"]
+        stand_off = max(48.0, body["radius"] * 4.8)
+        self.start_flight((bx, 0.0, bz), stand_off, body)
 
-    # Named bright stars
-    for name, az, alt, sz, col in SKY_STARS:
-        sx, sy = sky_to_screen(az, alt)
-        if -50 <= sx <= w + 50 and -50 <= sy <= h + 50:
-            r = max(2, int(sz * (70.0 / max(25.0, fov))))
-            pygame.draw.circle(screen, col, (sx, sy), r)
-            lbl = small_font.render(name, True, (185, 215, 245))
-            screen.blit(lbl, (sx + r + 4, sy - 6))
+    def on_press(self, event):
+        self.press_pos = (event.x, event.y)
+        self.drag_last = (event.x, event.y)
 
-    # Visible planets in night sky
-    for idx, b in enumerate(BODIES[1:], start=1):
-        az = (idx * 58 + sim_time * 8) % 360
-        alt = 20 + ((idx * 17) % 42)
-        sx, sy = sky_to_screen(az, alt)
-        if -50 <= sx <= w + 50 and -50 <= sy <= h + 50:
-            pygame.draw.circle(screen, b["color"], (sx, sy), 5)
-            pygame.draw.circle(screen, (255, 255, 255), (sx, sy), 6, 1)
-            lbl = small_font.render(f"{b['name']} (Planet)", True, (255, 235, 175))
-            screen.blit(lbl, (sx + 8, sy - 6))
+        # Check if user grabbed the movable HUD dossier header
+        if self.card_x is not None:
+            if (
+                self.card_x <= event.x <= self.card_x + self.card_w
+                and self.card_y <= event.y <= self.card_y + 38
+            ):
+                self.dragging_card = True
+                self.card_drag_offset = (event.x - self.card_x, event.y - self.card_y)
+                return
 
-    banner = font.render("HUMAN NIGHT SKY VIEW (Earth Horizon) — Drag to look, Scroll to zoom, [V] for 3D Space", True, (150, 220, 255))
-    screen.blit(banner, (20, 18))
+        self.fly_target_cam = None
+
+    def on_drag(self, event):
+        if self.dragging_card:
+            w = max(400, self.canvas.winfo_width())
+            h = max(300, self.canvas.winfo_height())
+            self.card_x = max(8, min(w - self.card_w - 8, event.x - self.card_drag_offset[0]))
+            self.card_y = max(8, min(h - self.card_h - 8, event.y - self.card_drag_offset[1]))
+            return
+
+        if not self.drag_last:
+            return
+        dx = event.x - self.drag_last[0]
+        dy = event.y - self.drag_last[1]
+        self.drag_last = (event.x, event.y)
+        self.yaw += dx * 0.005
+        if self.sky_mode:
+            self.pitch = max(0.05, min(1.35, self.pitch + dy * 0.005))
+        else:
+            self.pitch = max(-1.4, min(1.4, self.pitch - dy * 0.005))
+
+    def on_release(self, event):
+        if self.dragging_card:
+            self.dragging_card = False
+            self.drag_last = None
+            return
+
+        if self.press_pos:
+            moved = math.hypot(event.x - self.press_pos[0], event.y - self.press_pos[1])
+            if moved < 6:
+                self.handle_canvas_click(event.x, event.y)
+
+        self.drag_last = None
+        self.press_pos = None
+
+    def handle_canvas_click(self, mx, my):
+        # 1. Check top toolbar buttons
+        w = max(400, self.canvas.winfo_width())
+        if w - 175 <= mx <= w - 16 and 12 <= my <= 42:
+            self.toggle_sky_mode()
+            return
+
+        # 2. Check clicked celestial object (planet, galaxy, or star)
+        best_hit = None
+        best_dist = 9999.0
+        for sx, sy, hit_r, payload, world_pos, stand_off in self.hit_targets:
+            d = math.hypot(mx - sx, my - sy)
+            if d <= max(14.0, hit_r + 6.0) and d < best_dist:
+                best_dist = d
+                best_hit = (payload, world_pos, stand_off)
+
+        if best_hit:
+            payload, world_pos, stand_off = best_hit
+            if self.sky_mode:
+                self.selected = payload
+            else:
+                self.start_flight(world_pos, stand_off, payload)
+            return
+
+        # 3. Click anywhere in open 3D space -> fly smoothly into that sector!
+        if not self.sky_mode:
+            h = max(300, self.canvas.winfo_height())
+            focal = (h * 0.5) / math.tan(math.radians(self.fov * 0.5))
+            nx = (mx - w * 0.5) / focal
+            ny = -(my - h * 0.5) / focal
+            nz = 1.0
+            inv_len = 1.0 / math.sqrt(nx * nx + ny * ny + nz * nz)
+            nx, ny, nz = nx * inv_len, ny * inv_len, nz * inv_len
+
+            cp, sp = math.cos(self.pitch), math.sin(self.pitch)
+            cy, sy = math.cos(self.yaw), math.sin(self.yaw)
+
+            y1 = cp * ny + sp * nz
+            z1 = -sp * ny + cp * nz
+            x1 = nx
+
+            wx = cy * x1 + sy * z1
+            wy = y1
+            wz = -sy * x1 + cy * z1
+
+            dest = (self.cam_x + wx * 240.0, self.cam_y + wy * 240.0, self.cam_z + wz * 240.0)
+            sector_payload = {
+                "name": "Deep Space Sector",
+                "kind": "Interstellar / Intergalactic Region",
+                "color": "#38bdf8",
+                "dist": f"Coords ({dest[0]:.0f}, {dest[1]:.0f}, {dest[2]:.0f})",
+                "temp": "2.725 K (CMB)",
+                "diam": "Open Cosmic Volume",
+                "comp": "Cosmic Microwave Background photons & sparse plasma",
+                "features": "Direct line-of-sight to surrounding galaxies & star clusters",
+                "discovery": "Navigated via free-space coordinate click",
+                "info": "Click any nearby galaxy, star, or planet to fly closer and inspect its live surface/telescope view.",
+            }
+            self.start_flight(dest, 45.0, sector_payload)
+
+    def zoom_step(self, direction):
+        self.fly_target_cam = None
+        if self.sky_mode:
+            if direction < 0 and self.fov >= 82.0:
+                self.toggle_sky_mode()
+                return
+            self.fov = max(24.0, min(85.0, self.fov - direction * 4.0))
+            return
+        fx = math.sin(self.yaw) * math.cos(self.pitch)
+        fy = -math.sin(self.pitch)
+        fz = math.cos(self.yaw) * math.cos(self.pitch)
+        step = 36.0 * direction
+        self.cam_x += fx * step
+        self.cam_y += fy * step
+        self.cam_z += fz * step
+
+    def on_wheel(self, event):
+        self.zoom_step(1 if event.delta > 0 else -1)
+
+    def on_wheel_up(self, _event):
+        self.zoom_step(1)
+
+    def on_wheel_down(self, _event):
+        self.zoom_step(-1)
+
+    def project(self, wx, wy, wz, w, h):
+        rx = wx - self.cam_x
+        ry = wy - self.cam_y
+        rz = wz - self.cam_z
+
+        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
+        cp, sp = math.cos(self.pitch), math.sin(self.pitch)
+
+        x1 = cy * rx - sy * rz
+        z1 = sy * rx + cy * rz
+        y1 = ry
+
+        y2 = cp * y1 - sp * z1
+        z2 = sp * y1 + cp * z1
+        x2 = x1
+
+        if z2 <= 1.0:
+            return None
+        scale = (h * 0.5) / math.tan(math.radians(self.fov * 0.5)) / z2
+        sx = w * 0.5 + x2 * scale
+        sy_px = h * 0.5 - y2 * scale
+        return sx, sy_px, z2, scale
+
+    def draw_telescope_viewport(self, cx, cy, cw):
+        """Renders a live close-up surface / optical telescope preview inside the HUD card."""
+        vx, vy, vw, vh = cx + 12, cy + 36, cw - 24, 96
+        self.canvas.create_rectangle(vx, vy, vx + vw, vy + vh, fill="#030712", outline="#1e293b", width=1)
+
+        mid_x = vx + vw * 0.5
+        mid_y = vy + vh * 0.5
+        col = self.selected.get("color", "#38bdf8")
+        kind = self.selected.get("kind", "")
+
+        # Micro-stars inside optical frame
+        for i in range(16):
+            sx = vx + ((i * 53 + 17) % (vw - 8)) + 4
+            sy = vy + ((i * 29 + 11) % (vh - 8)) + 4
+            self.canvas.create_oval(sx, sy, sx + 1.5, sy + 1.5, fill="#94a3b8", outline="")
+
+        if "Galaxy" in kind:
+            # Animated spiral / elliptical galaxy close-up
+            rot = self.sim_time * 0.5
+            for arm in range(2):
+                pts = []
+                for step in range(26):
+                    ang = arm * math.pi + step * 0.22 + rot
+                    rad = step * 1.45
+                    px = mid_x + math.cos(ang) * rad * 1.7
+                    py = mid_y + math.sin(ang) * rad * 0.65
+                    if vx + 4 <= px <= vx + vw - 4 and vy + 4 <= py <= vy + vh - 4:
+                        pts.extend([px, py])
+                if len(pts) >= 4:
+                    self.canvas.create_line(*pts, fill=col, width=2, smooth=True)
+            self.canvas.create_oval(mid_x - 10, mid_y - 6, mid_x + 10, mid_y + 6, fill="#fef9c3", outline=col)
+        else:
+            # Close-up planetary globe / star disk with atmospheric limb & bands
+            r = 32
+            self.canvas.create_oval(mid_x - r - 4, mid_y - r - 4, mid_x + r + 4, mid_y + r + 4, outline=col, width=1)
+            self.canvas.create_oval(mid_x - r, mid_y - r, mid_x + r, mid_y + r, fill=col, outline="")
+            if self.selected.get("name") == "Saturn":
+                self.canvas.create_oval(mid_x - 66, mid_y - 14, mid_x + 66, mid_y + 14, outline="#fde68a", width=3)
+            # Terminator crescent shadow on right side for 3D depth
+            self.canvas.create_arc(
+                mid_x - r, mid_y - r, mid_x + r, mid_y + r,
+                start=-90, extent=180, fill="#060c18", outline=""
+            )
+
+        self.canvas.create_text(
+            vx + 8, vy + 7,
+            text="LIVE OPTICAL / SURFACE FEED",
+            fill="#7dd3fc", anchor="nw", font=("Sans", 7, "bold")
+        )
+
+    def draw_dossier_card(self, w, h):
+        if self.card_x is None:
+            self.card_x = w - self.card_w - 16
+        cx = max(8, min(w - self.card_w - 8, self.card_x))
+        cy = max(8, min(h - self.card_h - 8, self.card_y))
+        cw, ch = self.card_w, self.card_h
+
+        self.canvas.create_rectangle(cx, cy, cx + cw, cy + ch, fill="#0b1324", outline="#38bdf8", width=1)
+        # Movable header bar
+        self.canvas.create_rectangle(cx, cy, cx + cw, cy + 30, fill="#111d36", outline="")
+        self.canvas.create_text(
+            cx + 12, cy + 15,
+            text=f"☰  {self.selected['name']} ({self.selected['kind']})",
+            fill="#fde047", anchor="w", font=("Sans", 9, "bold")
+        )
+
+        self.draw_telescope_viewport(cx, cy, cw)
+
+        y_cursor = cy + 140
+        meta_lines = [
+            f"Distance: {self.selected.get('dist', 'N/A')}   |   Diam: {self.selected.get('diam', 'N/A')}",
+            f"Temp: {self.selected.get('temp', 'N/A')}",
+            f"Composition: {self.selected.get('comp', 'Hydrogen, helium & cosmic dust')}",
+            f"Features: {self.selected.get('features', 'Active cosmic structure')}",
+            f"Discovery: {self.selected.get('discovery', 'Catalogued via sky surveys')}",
+        ]
+        for line in meta_lines:
+            self.canvas.create_text(
+                cx + 12, y_cursor,
+                text=line, fill="#e2e8f0", anchor="nw", width=cw - 24, font=("Sans", 8)
+            )
+            y_cursor += 24 if len(line) > 54 else 18
+
+        self.canvas.create_text(
+            cx + 12, y_cursor + 4,
+            text=self.selected.get("info", ""),
+            fill="#94a3b8", anchor="nw", width=cw - 24, font=("Sans", 8)
+        )
+
+    def draw_sky_view(self, w, h):
+        horizon_y = h * 0.5 + math.sin(self.pitch) * h * 0.55
+        if 0 <= horizon_y <= h:
+            self.canvas.create_rectangle(0, horizon_y, w, h, fill="#081220", outline="")
+            self.canvas.create_line(0, horizon_y, w, horizon_y, fill="#38bdf8", width=2)
+
+        px_per_deg = w / self.fov
+        for name, az, alt, sz, col, dist, temp, diam, info in SKY_STARS:
+            d_az = ((az - math.degrees(self.yaw) + 180.0) % 360.0) - 180.0
+            d_alt = alt - math.degrees(self.pitch)
+            sx = w * 0.5 + d_az * px_per_deg
+            sy = h * 0.5 - d_alt * px_per_deg
+            if -60 <= sx <= w + 60 and -60 <= sy <= h + 60:
+                r = max(2, int(sz * (65.0 / max(25.0, self.fov))))
+                self.canvas.create_oval(sx - r, sy - r, sx + r, sy + r, fill=col, outline="")
+                self.canvas.create_text(sx + r + 6, sy, text=name, fill="#bae6fd", anchor="w", font=("Sans", 9))
+                star_payload = {
+                    "name": name,
+                    "kind": "Bright Night-Sky Star",
+                    "color": col,
+                    "dist": dist,
+                    "temp": temp,
+                    "diam": diam,
+                    "comp": "Hydrogen & helium fusion plasma",
+                    "features": "Visible to the naked eye from Earth's surface",
+                    "discovery": "Catalogued in Hipparcos & Gaia surveys",
+                    "info": info,
+                }
+                self.hit_targets.append((sx, sy, r + 6, star_payload, (0.0, 0.0, 0.0), 40.0))
+
+    def loop(self):
+        self.canvas.delete("all")
+        self.hit_targets.clear()
+        w = max(400, self.canvas.winfo_width())
+        h = max(300, self.canvas.winfo_height())
+        self.sim_time += 0.016
+
+        # Smooth click-to-travel flight interpolation
+        if self.fly_target_cam:
+            tx, ty, tz = self.fly_target_cam
+            self.cam_x += (tx - self.cam_x) * 0.08
+            self.cam_y += (ty - self.cam_y) * 0.08
+            self.cam_z += (tz - self.cam_z) * 0.08
+            if self.fly_look_target:
+                self.aim_camera_at(*self.fly_look_target)
+            if math.dist((self.cam_x, self.cam_y, self.cam_z), self.fly_target_cam) < 1.2:
+                self.fly_target_cam = None
+
+        if self.sky_mode:
+            self.draw_sky_view(w, h)
+        else:
+            for s_name, sx_w, sy_w, sz_w, col in self.stars:
+                p = self.project(sx_w, sy_w, sz_w, w, h)
+                if p and 0 <= p[0] <= w and 0 <= p[1] <= h:
+                    self.canvas.create_oval(p[0] - 1, p[1] - 1, p[0] + 1, p[1] + 1, fill=col, outline="")
+                    star_payload = {
+                        "name": f"{s_name} Field Star",
+                        "kind": "Main-Sequence / Giant Star",
+                        "color": col,
+                        "dist": f"{int(math.dist((0, 0, 0), (sx_w, sy_w, sz_w)))} ly (Rel)",
+                        "temp": "4,200–11,000 K",
+                        "diam": "~1.4M–18M km",
+                        "comp": "Hydrogen & helium plasma",
+                        "features": "Galactic disk star",
+                        "discovery": "Gaia Astrometric Survey",
+                        "info": "A distant star in our galaxy radiating light from core nuclear fusion.",
+                    }
+                    self.hit_targets.append((p[0], p[1], 6.0, star_payload, (sx_w, sy_w, sz_w), 55.0))
+
+            for g_id, gx_w, gy_w, gz_w, col in self.deep_galaxies:
+                p = self.project(gx_w, gy_w, gz_w, w, h)
+                if p and 0 <= p[0] <= w and 0 <= p[1] <= h:
+                    rx = max(2.0, min(8.0, 260.0 / p[2]))
+                    self.canvas.create_oval(p[0] - rx, p[1] - rx * 0.5, p[0] + rx, p[1] + rx * 0.5, fill=col, outline="")
+                    deep_payload = {
+                        "name": f"{g_id} Deep-Field Galaxy",
+                        "kind": "Distant Spiral / Elliptical Galaxy",
+                        "color": col,
+                        "dist": f"~{int(math.dist((0, 0, 0), (gx_w, gy_w, gz_w)) * 18)}M ly",
+                        "temp": "Integrated: ~5,200 K",
+                        "diam": "~75,000 ly across",
+                        "comp": "Billions of stars, interstellar gas & dark matter",
+                        "features": "Cosmologically redshifted deep-sky galaxy",
+                        "discovery": "Hubble / JWST / Euclid Deep Field Survey",
+                        "info": "One of hundreds of billions to ~2 trillion galaxies across the observable universe.",
+                    }
+                    self.hit_targets.append((p[0], p[1], rx + 6.0, deep_payload, (gx_w, gy_w, gz_w), 65.0))
+
+            for gal in GALAXIES:
+                p = self.project(*gal["pos"], w, h)
+                if p and -120 <= p[0] <= w + 120 and -120 <= p[1] <= h + 120:
+                    rx = max(9.0, min(75.0, 34000.0 / p[2]))
+                    ry = max(4.5, rx * 0.42)
+                    self.canvas.create_oval(p[0] - rx, p[1] - ry, p[0] + rx, p[1] + ry, outline=gal["color"], width=2)
+                    self.canvas.create_text(
+                        p[0] + rx + 6, p[1],
+                        text=gal["name"],
+                        fill="#c7d2fe", anchor="w", font=("Sans", 8, "bold")
+                    )
+                    self.hit_targets.append((p[0], p[1], rx + 8.0, gal, gal["pos"], 140.0))
+
+            positions = {}
+            for body in BODIES:
+                angle = self.sim_time * body["orbit_speed"]
+                bx = math.cos(angle) * body["orbit_r"]
+                bz = math.sin(angle) * body["orbit_r"]
+                positions[body["name"]] = (bx, 0.0, bz)
+
+                if body["orbit_r"] > 0:
+                    ring = []
+                    for step in range(48):
+                        a = (2.0 * math.pi * step) / 48.0
+                        rp = self.project(math.cos(a) * body["orbit_r"], 0.0, math.sin(a) * body["orbit_r"], w, h)
+                        if rp:
+                            ring.extend([rp[0], rp[1]])
+                    if len(ring) >= 6:
+                        self.canvas.create_line(*ring, fill="#1e293b", width=1)
+
+                proj = self.project(bx, 0.0, bz, w, h)
+                if proj:
+                    sx, sy_px, _z2, scale = proj
+                    r = max(3.5, min(140.0, body["radius"] * scale))
+                    self.canvas.create_oval(sx - r, sy_px - r, sx + r, sy_px + r, fill=body["color"], outline="")
+                    if body["name"] == "Saturn":
+                        self.canvas.create_oval(
+                            sx - r * 1.9, sy_px - max(2.0, r * 0.35),
+                            sx + r * 1.9, sy_px + max(2.0, r * 0.35),
+                            outline="#fde68a", width=2
+                        )
+                    self.canvas.create_text(sx + r + 6, sy_px, text=body["name"], fill="#e2e8f0", anchor="w", font=("Sans", 9, "bold"))
+                    self.hit_targets.append((sx, sy_px, r + 6.0, body, (bx, 0.0, bz), max(45.0, body["radius"] * 4.8)))
+
+        # Minimal Top-Right Sky View Button (No top-left text clutter)
+        btn_label = "Exit Sky View [V]" if self.sky_mode else "Sky View from Earth [V]"
+        self.canvas.create_rectangle(w - 175, 12, w - 16, 42, fill="#0f172a", outline="#38bdf8", width=1)
+        self.canvas.create_text(w - 95, 27, text=btn_label, fill="#e0f2fe", font=("Sans", 8, "bold"))
+
+        # Movable Scientific Dossier & Live Surface/Optical Viewport
+        self.draw_dossier_card(w, h)
+
+        self.root.after(16, self.loop)
 
 
 def main():
-    pygame.init()
-    w, h = 1280, 780
-    screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
-    pygame.display.set_caption("Captain's Universe & Night Sky Explorer (Python)")
-    clock = pygame.time.Clock()
-
-    font = pygame.font.SysFont("DejaVu Sans", 16, bold=True)
-    small_font = pygame.font.SysFont("DejaVu Sans", 13)
-    tiny_font = pygame.font.SysFont("DejaVu Sans", 12)
-
-    star_pts, star_cols, star_sizes = generate_starfield()
-    deep_pts, deep_cols, deep_radii = generate_deep_galaxies()
-
-    cam_pos = np.array([0.0, 220.0, 620.0], dtype=np.float64)
-    yaw = 0.0
-    pitch = -0.32
-    fov = 60.0
-    sky_mode = False
-    show_galaxies = True
-    selected_body = BODIES[3]  # Default focus: Earth
-    sim_time = 0.0
-    dragging = False
-    last_mouse = (0, 0)
-
-    while True:
-        w, h = screen.get_size()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-                elif event.key == pygame.K_v:
-                    sky_mode = not sky_mode
-                    fov = 55.0 if sky_mode else 60.0
-                elif event.key == pygame.K_g:
-                    show_galaxies = not show_galaxies
-                elif event.key == pygame.K_SPACE:
-                    sky_mode = False
-                    fov = 60.0
-                    cam_pos = np.array([0.0, 220.0, 620.0], dtype=np.float64)
-                    yaw, pitch = 0.0, -0.32
-                elif pygame.K_1 <= event.key <= pygame.K_7:
-                    sky_mode = False
-                    selected_body = BODIES[event.key - pygame.K_1]
-                    angle = sim_time * selected_body["orbit_speed"]
-                    bx = math.cos(angle) * selected_body["orbit_r"]
-                    bz = math.sin(angle) * selected_body["orbit_r"]
-                    cam_pos = np.array([bx, selected_body["radius"] * 3.5 + 18.0, bz + selected_body["radius"] * 5.0])
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    dragging = True
-                    last_mouse = event.pos
-                elif event.button == 4:  # Scroll up -> zoom in
-                    if sky_mode:
-                        fov = max(22.0, fov - 4.0)
-                    else:
-                        forward = np.array([
-                            math.sin(yaw) * math.cos(pitch),
-                            -math.sin(pitch),
-                            math.cos(yaw) * math.cos(pitch),
-                        ])
-                        cam_pos += forward * 28.0
-                elif event.button == 5:  # Scroll down -> zoom out
-                    if sky_mode:
-                        fov = min(85.0, fov + 4.0)
-                    else:
-                        forward = np.array([
-                            math.sin(yaw) * math.cos(pitch),
-                            -math.sin(pitch),
-                            math.cos(yaw) * math.cos(pitch),
-                        ])
-                        cam_pos -= forward * 28.0
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    dragging = False
-            elif event.type == pygame.MOUSEMOTION and dragging:
-                mx, my = event.pos
-                dx = mx - last_mouse[0]
-                dy = my - last_mouse[1]
-                last_mouse = (mx, my)
-                yaw += dx * 0.005
-                pitch = max(-1.45, min(1.45, pitch - dy * 0.005))
-
-        keys = pygame.key.get_pressed()
-        if not sky_mode:
-            speed = 12.0 if (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) else 5.5
-            forward = np.array([math.sin(yaw), 0.0, math.cos(yaw)])
-            right = np.array([math.cos(yaw), 0.0, -math.sin(yaw)])
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
-                cam_pos += forward * speed
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                cam_pos -= forward * speed
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                cam_pos -= right * speed
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                cam_pos += right * speed
-
-        sim_time += 0.016
-
-        if sky_mode:
-            draw_sky_view(screen, font, small_font, yaw, pitch, fov, sim_time)
-        else:
-            screen.fill((3, 5, 12))
-
-            # Background stars
-            for i in range(len(star_pts)):
-                p = project_point(star_pts[i], cam_pos, yaw, pitch, fov, w, h)
-                if p:
-                    sx, sy, _, _ = p
-                    if 0 <= sx < w and 0 <= sy < h:
-                        pygame.draw.circle(screen, star_cols[i].astype(int), (sx, sy), int(star_sizes[i]))
-
-            # Distant background galaxies (countless-style deep field)
-            if show_galaxies:
-                for i in range(len(deep_pts)):
-                    p = project_point(deep_pts[i], cam_pos, yaw, pitch, fov, w, h)
-                    if p:
-                        sx, sy, z2, _ = p
-                        if 0 <= sx < w and 0 <= sy < h:
-                            r = max(2, min(10, int(deep_radii[i] * 500.0 / z2)))
-                            col = deep_cols[i].astype(int)
-                            pygame.draw.ellipse(screen, col, (sx - r, sy - r // 2, r * 2, max(2, r)))
-
-                # Named major galaxies
-                for g in GALAXIES:
-                    p = project_point(g["pos"], cam_pos, yaw, pitch, fov, w, h)
-                    if p:
-                        sx, sy, z2, _ = p
-                        if -100 <= sx <= w + 100 and -100 <= sy <= h + 100:
-                            rx = max(6, min(95, int(42000.0 / z2)))
-                            ry = max(3, int(rx * 0.42))
-                            surf = pygame.Surface((rx * 2 + 4, ry * 2 + 4), pygame.SRCALPHA)
-                            pygame.draw.ellipse(surf, (*g["color"], 95), (2, 2, rx * 2, ry * 2))
-                            pygame.draw.circle(surf, (*g["color"], 190), (rx + 2, ry + 2), max(3, rx // 5))
-                            screen.blit(surf, (sx - rx - 2, sy - ry - 2))
-                            lbl = tiny_font.render(f"{g['name']} [{g['gtype']}]", True, (180, 215, 250))
-                            screen.blit(lbl, (sx + 8, sy - 8))
-
-            # Solar System bodies & orbits
-            body_positions = {}
-            for b in BODIES:
-                angle = sim_time * b["orbit_speed"]
-                bx = math.cos(angle) * b["orbit_r"]
-                bz = math.sin(angle) * b["orbit_r"]
-                pos = np.array([bx, 0.0, bz], dtype=np.float64)
-                body_positions[b["name"]] = pos
-
-                if b["orbit_r"] > 0:
-                    ring_pts = []
-                    for step in range(48):
-                        a = (2 * math.pi * step) / 48
-                        rp = project_point(
-                            np.array([math.cos(a) * b["orbit_r"], 0.0, math.sin(a) * b["orbit_r"]]),
-                            cam_pos, yaw, pitch, fov, w, h,
-                        )
-                        if rp:
-                            ring_pts.append((rp[0], rp[1]))
-                    if len(ring_pts) > 2:
-                        pygame.draw.lines(screen, (35, 48, 72), True, ring_pts, 1)
-
-                proj = project_point(pos, cam_pos, yaw, pitch, fov, w, h)
-                if proj:
-                    sx, sy, z2, scale = proj
-                    rad = max(3, min(180, int(b["radius"] * scale)))
-                    if b["glow"]:
-                        glow_surf = pygame.Surface((rad * 4 + 4, rad * 4 + 4), pygame.SRCALPHA)
-                        pygame.draw.circle(glow_surf, (*b["glow"], 55), (rad * 2 + 2, rad * 2 + 2), rad * 2)
-                        screen.blit(glow_surf, (sx - rad * 2 - 2, sy - rad * 2 - 2))
-                    pygame.draw.circle(screen, b["color"], (sx, sy), rad)
-                    if b["name"] == "Saturn":
-                        pygame.draw.ellipse(screen, (215, 190, 135), (sx - int(rad * 1.9), sy - max(2, rad // 3), int(rad * 3.8), max(4, int(rad * 0.65))), 2)
-                    lbl = small_font.render(b["name"], True, (235, 242, 255))
-                    screen.blit(lbl, (sx + rad + 5, sy - 7))
-
-            # Distance-triggered focus detection
-            closest_b = min(BODIES, key=lambda item: float(np.linalg.norm(cam_pos - body_positions[item["name"]])))
-            closest_dist = float(np.linalg.norm(cam_pos - body_positions[closest_b["name"]]))
-            if closest_dist < 140.0:
-                selected_body = closest_b
-
-            # Top-left controls & galaxy census header
-            top_lines = [
-                "3D UNIVERSE EXPLORER — Drag: Look | WASD/Arrows: Move | Scroll: Zoom | [1-7]: Focus | [G]: Galaxies | [V]: Sky View",
-                f"Observable Universe: {COSMOS_SUMMARY['observable_estimate']} | {COSMOS_SUMMARY['catalogued_note']}",
-            ]
-            for i, line in enumerate(top_lines):
-                surf = tiny_font.render(line, True, (155, 195, 235) if i == 0 else (130, 220, 190))
-                screen.blit(surf, (16, 14 + i * 18))
-
-            # Right-side HUD card for selected/zoomed body
-            card_w, card_h = 350, 235
-            cx, cy = w - card_w - 18, 56
-            hud_surf = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
-            pygame.draw.rect(hud_surf, (12, 20, 36, 215), (0, 0, card_w, card_h), border_radius=10)
-            pygame.draw.rect(hud_surf, (70, 130, 195, 180), (0, 0, card_w, card_h), 1, border_radius=10)
-            screen.blit(hud_surf, (cx, cy))
-
-            sel_dist = float(np.linalg.norm(cam_pos - body_positions[selected_body["name"]]))
-            hud_entries = [
-                (font.render(f"{selected_body['name']} ({selected_body['kind']})", True, (255, 230, 150)), 12),
-                (tiny_font.render(f"Camera Distance: {sel_dist:.1f}u  |  Scale: {selected_body['distance']}", True, (150, 215, 255)), 36),
-                (tiny_font.render(f"Diameter: {selected_body['diameter']}", True, (215, 225, 240)), 56),
-                (tiny_font.render(f"Temp: {selected_body['temp']}", True, (215, 225, 240)), 74),
-            ]
-            for txt_surf, y_off in hud_entries:
-                screen.blit(txt_surf, (cx + 14, cy + y_off))
-
-            # Word-wrap details
-            words = selected_body["details"].split()
-            lines, cur = [], ""
-            for word in words:
-                test = f"{cur} {word}".strip()
-                if tiny_font.size(test)[0] <= card_w - 28:
-                    cur = test
-                else:
-                    lines.append(cur)
-                    cur = word
-            if cur:
-                lines.append(cur)
-            for idx_l, l_txt in enumerate(lines[:5]):
-                screen.blit(tiny_font.render(l_txt, True, (185, 200, 220)), (cx + 14, cy + 98 + idx_l * 16))
-
-        pygame.display.flip()
-        clock.tick(60)
+    try:
+        root = tk.Tk()
+        NightSkyApp(root)
+        root.mainloop()
+    except tk.TclError as exc:
+        print(f"Display initialization failed: {exc}")
 
 
 if __name__ == "__main__":

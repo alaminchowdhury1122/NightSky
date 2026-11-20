@@ -86,7 +86,7 @@
     <!-- Projected 3D Labels Container -->
     <div id="labels-container" class="fixed inset-0 pointer-events-none z-10 overflow-hidden"></div>
 
-    <!-- Floating Movable Control Toolbar (Title pill removed for clean space view) -->
+    <!-- Floating Movable Control Toolbar -->
     <div id="floating-toolbar" class="fixed top-3 right-3 z-20 glass-panel rounded-2xl p-1.5 flex flex-wrap items-center gap-1.5 shadow-2xl">
         <!-- Drag Handle -->
         <div class="drag-handle px-2 py-1.5 text-slate-400 hover:text-white flex items-center" title="Drag toolbar anywhere">
@@ -1560,6 +1560,44 @@
         });
 
         document.getElementById('card-sky-btn').addEventListener('click', enterSkyViewMode);
+
+        function enterSkyViewMode() {
+            if (isSkyViewMode) return;
+            isSkyViewMode = true;
+            isAutoFlying = false;
+            controls.enabled = false;
+            horizonGroup.visible = true;
+            skyBtnText.textContent = 'Exit Sky View';
+            skyBanner.classList.remove('opacity-0');
+            skyBanner.classList.add('opacity-100');
+            updateActivePill(null);
+            updateScaleStage(camera.position.length(), true, 'sky');
+            showInfoCard(CELESTIAL_DATA.earth, false, false);
+        }
+
+        function exitSkyViewMode(launchBack = true) {
+            if (!isSkyViewMode) return;
+            isSkyViewMode = false;
+            isDraggingSky = false;
+            controls.enabled = true;
+            horizonGroup.visible = false;
+            skyBtnText.textContent = 'Sky View from Earth';
+            skyBanner.classList.add('opacity-0');
+            skyBanner.classList.remove('opacity-100');
+
+            if (launchBack) {
+                const earthPos = planetObjects.earth.group.position;
+                camera.position.copy(earthPos).add(new THREE.Vector3(0, 4.5, 9.5));
+                controls.target.copy(earthPos);
+                focusedTargetId = 'earth';
+                updateActivePill('earth');
+            }
+        }
+
+        skyViewBtn.addEventListener('click', () => {
+            if (isSkyViewMode) exitSkyViewMode(true);
+            else enterSkyViewMode();
+        });
 
         // Live Real Surface / Telescope Close-Up Renderer inside Dossier
         function renderSurfaceViewport(elapsed) {
