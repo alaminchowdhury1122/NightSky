@@ -67,7 +67,7 @@ const dots=(pos,col,size,atten=false,op=1)=>{const g=new THREE.BufferGeometry();
 /* ---------- renderer ---------- */
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.05,80000);camera.position.set(0,50,130);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputEncoding=THREE.sRGBEncoding;renderer.setClearColor(0,0);document.body.prepend(renderer.domElement);
-const controls=new THREE.OrbitControls(camera,renderer.domElement);Object.assign(controls,{enableDamping:true,dampingFactor:.07,enablePan:false,maxDistance:30000,zoomSpeed:1.3});
+const controls=new THREE.OrbitControls(camera,renderer.domElement);Object.assign(controls,{enableDamping:true,dampingFactor:.07,enablePan:false,maxDistance:30000,zoomSpeed:1.3,autoRotateSpeed:.5});
 const sunLight=new THREE.PointLight(0xfff4e0,1.7,0,0),skyLight=new THREE.DirectionalLight(0xfff4e0,1.8);scene.add(sunLight,new THREE.AmbientLight(0x223048,.35),skyLight);skyLight.visible=false;
 /* ---------- data ---------- */
 const AUKM=149.6;
@@ -137,6 +137,8 @@ const DF=[];{const N=450,p=new Float32Array(N*3),c=new Float32Array(N*3),M=['Spi
  for(let i=0;i<N;i++){const d=V(rnd()*2-1,(rnd()*2-1)*.6,rnd()*2-1).normalize().multiplyScalar(9000+Math.pow(rnd(),.7)*14000),k=new THREE.Color().setHSL(.08+rnd()*.5,.5,.7);p.set([d.x,d.y,d.z],i*3);c.set([k.r,k.g,k.b],i*3);
   const it=add({id:'d'+i,name:'Galaxy '+(i+1),kind:'deep',type:M[i%4],pos:d,r:60,fly:240,col:'#'+k.getHexString(),desc:'One of billions of galaxies. This one is generated for illustration; the real universe holds a similar crowd.',rows:[['Status','Illustrative, not a catalogue entry']]});DF.push(it)}
  const dp=dots(p,c,3.4,false,.9);gal.add(dp);window.dfPts=dp}
+/* asteroid belt between Mars and Jupiter */
+const belt=(()=>{const N=2200,p=new Float32Array(N*3),c=new Float32Array(N*3);for(let i=0;i<N;i++){const r=26+rnd()*8+gauss()*.6,a=rnd()*TAU;p.set([Math.cos(a)*r,gauss()*.5,Math.sin(a)*r],i*3);const b=.35+rnd()*.5;c.set([b,b*.92,b*.8],i*3)}return dots(p,c,1.6,false,.8)})();space.add(belt);
 /* ground & sky-only objects */
 const ground=new THREE.Group();ground.visible=false;scene.add(ground);
 const gmat=new THREE.MeshBasicMaterial({color:0x04060b,side:THREE.DoubleSide});
@@ -150,8 +152,8 @@ Object.keys(PS).forEach(id=>{const s=spr(byId[id].col,PS[id],1);skyObjs.add(s);p
 add({id:'ksun',name:'Sun',kind:'planetsky',type:'Star',obj:sunCore,r:0,col:'#ffd27a',desc:byId.sun.desc,rows:byId.sun.rows,src:'sun'});
 add({id:'kmoon',name:'Moon',kind:'planetsky',type:'Moon of Earth',obj:moonSky,r:0,col:'#b9b6b0',desc:byId.moon.desc,rows:byId.moon.rows,src:'moon'});
 /* ---------- state ---------- */
-let focus=byId.sun,tw=null,sky=false,TT=0,spin=0,yaw=Math.PI,pitch=.35,speed=1,prev=new THREE.Vector3(),sel=null,tm=0,lastBg='';
-const wp=it=>it.pos?it.pos:it.obj.getWorldPosition(new THREE.Vector3());
+let EXPN=0,auto=true,it_=0,focus=byId.sun,tw=null,sky=false,TT=0,spin=0,yaw=Math.PI,pitch=.35,speed=1,prev=new THREE.Vector3(),sel=null,tm=0,lastBg='';
+const wp=it=>it.pos?(it.kind==='deep'?it.pos.clone().multiplyScalar(dfPts.scale.x):it.pos):it.obj.getWorldPosition(new THREE.Vector3());
 function flyTo(it){if(!it.fly)return;const P=wp(it),t0=controls.target.clone(),d0=camera.position.distanceTo(t0),dir=camera.position.clone().sub(t0).normalize();if(dir.lengthSq()<.01)dir.set(0,.4,1).normalize();
  tw={t:0,dur:2.6,t0,d0,d1:it.fly,dir,it};focus=it;controls.minDistance=Math.max(it.r*1.25,.3)}
 function select(it){sel=it;if(!it){$('info').hidden=true;return}$('tp').textContent=it.type;$('nm').textContent=it.name;$('ds').textContent=it.desc;$('rw').innerHTML=it.rows.map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');
@@ -167,10 +169,11 @@ $('bs').onclick=()=>sky?exitSky():(focus===byId.earth?enterSky():(visit(byId.ear
 $('land').onclick=enterSky;
 /* ---------- input ---------- */
 const cv=renderer.domElement;let dn=null,drag=false,pp={x:0,y:0};
-cv.addEventListener('pointerdown',e=>{dn={x:e.clientX,y:e.clientY,t:performance.now()};if(sky){drag=true;pp={x:e.clientX,y:e.clientY}}tw=null;$('hint').style.opacity=0});
+cv.addEventListener('pointerdown',e=>{dn={x:e.clientX,y:e.clientY,t:performance.now()};if(sky){drag=true;pp={x:e.clientX,y:e.clientY}}tw=null;$('hint').style.opacity=0;idle()});
+function idle(){auto=false;clearTimeout(it_);it_=setTimeout(()=>auto=true,6000)}
 addEventListener('pointermove',e=>{if(!sky||!drag)return;yaw-=(e.clientX-pp.x)*.005;pitch=clamp(pitch+(e.clientY-pp.y)*.005,-.05,1.5);pp={x:e.clientX,y:e.clientY}});
 addEventListener('pointerup',e=>{drag=false;if(dn&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<6&&e.target===cv){const it=hit(e.clientX,e.clientY);if(it){select(it);if(!sky)flyTo(it)}else select(null)}dn=null});
-cv.addEventListener('wheel',e=>{tw=null;$('hint').style.opacity=0;if(sky){if(e.deltaY>0&&camera.fov>=88)exitSky();camera.fov=clamp(camera.fov+e.deltaY*.04,25,90);camera.updateProjectionMatrix()}},{passive:true});
+cv.addEventListener('wheel',e=>{tw=null;idle();$('hint').style.opacity=0;if(sky){if(e.deltaY>0&&camera.fov>=88)exitSky();camera.fov=clamp(camera.fov+e.deltaY*.04,25,90);camera.updateProjectionMatrix()}},{passive:true});
 function hit(x,y){let b=null,bs=1e9;const pxr=Math.tan(camera.fov*Math.PI/360),W=innerWidth,H=innerHeight;
  for(const it of items){const kind=it.kind;if(sky?(kind!=='star'&&kind!=='planetsky'):(kind==='planetsky'||kind==='deep'&&!gal.visible||kind==='galaxy'&&!gal.visible))continue;
   const v=wp(it).clone();
@@ -199,6 +202,9 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
  for(const id in planets){const p=planets[id],a=p.ph+TAU*TT/p.per;p.grp.position.set(Math.cos(a)*p.R,0,Math.sin(a)*p.R);p.mesh.rotation.y=sky?0:TAU*TT/Math.abs(p.rot)*Math.sign(p.rot)*.02+tm*.05*Math.sign(p.rot);if(p.clouds)p.clouds.rotation.y=tm*.07}
  {const ep=planets.earth.grp.position,ma=TAU*TT/27.32;planets.earth.moon.position.set(ep.x+Math.cos(ma)*3,0,ep.z+Math.sin(ma)*3)}
  byId.sun.obj.rotation.y=tm*.02;
+ bgStars.material.size=2.4+Math.sin(tm*2.3)*.3;
+ if(!sky){const s=speed;gal.children.forEach((g,i)=>{if(g.userData.pt)g.userData.pt.rotation.y+=dt*s*(.05+(i%3)*.02)});belt.rotation.y+=dt*s*.04;EXPN+=dt*s*.004;dfPts.scale.setScalar(1+EXPN)}
+ controls.autoRotate=auto&&!tw&&!sky;
  if(sky){/* Earth spin + observer at 40°N */
   const lat=40*Math.PI/180;spin=TAU*TT;const qy=new THREE.Quaternion().setFromAxisAngle(V(0,1,0),-spin),qz=new THREE.Quaternion().setFromAxisAngle(V(0,0,1),Math.PI/2-lat);celestial.quaternion.copy(qz).multiply(qy);
   const E=planets.earth.grp.position,sd=E.clone().negate().normalize();sunSky.position.copy(sd);sunCore.position.copy(sd);sunHalo.position.copy(sd);skyLight.position.copy(sd.clone().multiplyScalar(100));
