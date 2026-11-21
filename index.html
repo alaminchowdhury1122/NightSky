@@ -62,7 +62,9 @@ function makeTex(id,seed){const w=512,h=256,c=document.createElement('canvas');c
 const T=c=>{const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t};
 function glowCanvas(){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),q=x.createRadialGradient(64,64,0,64,64,64);q.addColorStop(0,'rgba(255,255,255,1)');q.addColorStop(.2,'rgba(255,255,255,.55)');q.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=q;x.fillRect(0,0,128,128);return c}
 const GLOW=new THREE.CanvasTexture(glowCanvas());
-const spr=(col,s,op=1)=>{const m=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:col,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false}));m.scale.set(s,s,1);return m};
+const SPK=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),q=x.createRadialGradient(64,64,0,64,64,64);q.addColorStop(0,'rgba(255,255,255,1)');q.addColorStop(.12,'rgba(255,255,255,.6)');q.addColorStop(.5,'rgba(255,255,255,.08)');q.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=q;x.fillRect(0,0,128,128);
+ for(const a of[0,Math.PI/2]){x.save();x.translate(64,64);x.rotate(a);const l=x.createLinearGradient(-64,0,64,0);l.addColorStop(0,'rgba(255,255,255,0)');l.addColorStop(.5,'rgba(255,255,255,.9)');l.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=l;x.fillRect(-64,-1,128,2);x.restore()}return new THREE.CanvasTexture(c)})();
+const spr=(col,s,op=1,map=GLOW)=>{const m=new THREE.Sprite(new THREE.SpriteMaterial({map:map,color:col,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false}));m.scale.set(s,s,1);return m};
 const dots=(pos,col,size,atten=false,op=1)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));return new THREE.Points(g,new THREE.PointsMaterial({size,map:GLOW,vertexColors:true,transparent:true,opacity:op,sizeAttenuation:atten,blending:THREE.AdditiveBlending,depthWrite:false}))};
 /* ---------- renderer ---------- */
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.05,80000);camera.position.set(0,50,130);
@@ -107,8 +109,9 @@ const ST=[['Betelgeuse',88.79,7.41,.42,'#ff9d5c',548,'Orion','Red supergiant tha
 ['Dubhe',165.93,61.75,1.79,'#fde047',123,'Ursa Major'],['Merak',165.46,56.38,2.37,'#f8fafc',80,'Ursa Major'],['Phecda',178.46,53.69,2.44,'#f8fafc',83,'Ursa Major'],['Megrez',183.86,57.03,3.31,'#f8fafc',81,'Ursa Major'],['Alioth',193.51,55.96,1.77,'#f8fafc',83,'Ursa Major'],['Mizar',200.98,54.93,2.23,'#f8fafc',83,'Ursa Major'],['Alkaid',206.89,49.31,1.86,'#bae6fd',104,'Ursa Major']];
 const dirOf=(ra,dec)=>{ra*=Math.PI/180;dec*=Math.PI/180;return V(Math.cos(dec)*Math.cos(ra),Math.sin(dec),Math.cos(dec)*Math.sin(ra))};
 const SM={};
-ST.forEach(s=>{const d=dirOf(s[1],s[2]),m=spr(s[4],clamp(.03-s[3]*.004,.012,.04),.9);m.position.copy(d);celestial.add(m);SM[s[0]]=d;
+ST.forEach(s=>{const d=dirOf(s[1],s[2]),m=spr(s[4],clamp(.05-s[3]*.007,.02,.075),1,SPK);m.position.copy(d);celestial.add(m);SM[s[0]]=d;
  add({id:'s'+s[0],name:s[0],kind:'star',type:s[6]+' · star',obj:m,r:0,fly:0,col:s[4],desc:s[7]||'A star of the constellation '+s[6]+'.',rows:[['Distance',s[5]+' light-years'],['Apparent magnitude',s[3]]]})});
+const STI=items.filter(i=>i.kind==='star');STI.forEach(i=>{i.base=i.obj.scale.x;i.ph=rnd()*6});
 const CL=[['Betelgeuse','Bellatrix'],['Betelgeuse','Alnitak'],['Bellatrix','Mintaka'],['Mintaka','Alnilam'],['Alnilam','Alnitak'],['Alnitak','Saiph'],['Mintaka','Rigel'],['Dubhe','Merak'],['Merak','Phecda'],['Phecda','Megrez'],['Megrez','Dubhe'],['Megrez','Alioth'],['Alioth','Mizar'],['Mizar','Alkaid'],['Dubhe','Polaris']];
 const cons=new THREE.Group();CL.forEach(([a,b])=>cons.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([SM[a],SM[b]]),new THREE.LineBasicMaterial({color:0x5aa8ff,transparent:true,opacity:.35}))));celestial.add(cons);
 /* background stars (+ faint Milky Way band) */
@@ -116,12 +119,14 @@ const cons=new THREE.Group();CL.forEach(([a,b])=>cons.add(new THREE.Line(new THR
  for(let i=0;i<N;i++){let d;if(i%3==0){const a=rnd()*TAU,b=gauss()*.1,x=Math.cos(a)*Math.cos(b),y=Math.sin(a)*Math.cos(b),z=Math.sin(b);d=V(x,y*.5-z*.866,y*.866+z*.5)}else d=V(rnd()*2-1,rnd()*2-1,rnd()*2-1).normalize();
   const k=pal[(rnd()*5)|0],br=(.25+Math.pow(rnd(),3)*.75)*(i%3==0?.55:1);p.set([d.x,d.y,d.z],i*3);c.set([k[0]*br,k[1]*br,k[2]*br],i*3)}
  var bgStars=dots(p,c,2.4);celestial.add(bgStars)}
+const mkBright=n=>{const p=new Float32Array(n*3),c=new Float32Array(n*3),pal=[[.7,.85,1],[1,.95,.8],[1,.75,.55],[1,1,1]];for(let i=0;i<n;i++){const d=V(rnd()*2-1,rnd()*2-1,rnd()*2-1).normalize();p.set([d.x,d.y,d.z],i*3);c.set(pal[(rnd()*4)|0],i*3)}const o=dots(p,c,16,false,1);o.material.map=SPK;celestial.add(o);return o};
+const brA=mkBright(130),brB=mkBright(130);
 /* galaxies */
 const gal=new THREE.Group();space.add(gal);
 function spiral(R,N,c1,c2,arms,ell,tilt){const p=new Float32Array(N*3),c=new Float32Array(N*3),a=new THREE.Color(c1),b=new THREE.Color(c2);
  for(let i=0;i<N;i++){const f=Math.pow(rnd(),.7),r=f*R;let x,y,z;if(ell){const q=rnd()*TAU,u=rnd()*2-1,s=Math.sqrt(1-u*u);x=r*s*Math.cos(q);z=r*s*Math.sin(q);y=r*u*.6}else{const th=(i%arms)/arms*TAU+f*5.5+gauss()*.18;x=r*Math.cos(th)+gauss()*R*.02;z=r*Math.sin(th)+gauss()*R*.02;y=gauss()*R*.015*(1-f*.6)}
   const k=a.clone().lerp(b,f*f),br=.45+rnd()*.55;p.set([x,y,z],i*3);c.set([k.r*br,k.g*br,k.b*br],i*3)}
- const g=new THREE.Group(),pt=dots(p,c,2.3,false,.9);g.add(pt,spr(c1,R*.8,.5));g.rotation.set(tilt[0],0,tilt[1]);g.userData.pt=pt;return g}
+ const g=new THREE.Group(),pt=dots(p,c,1.7,false,.45);g.add(pt,spr(c1,R*.9,.22));g.rotation.set(tilt[0],0,tilt[1]);g.userData.pt=pt;return g}
 const MW=spiral(600,9000,'#ffe9b0','#7fa8ff',3,false,[0,0]);MW.position.set(-312,0,0);gal.add(MW);
 const GD=[['milky','Milky Way','Barred spiral galaxy',MW.position,600,'#ffe9b0','Our home galaxy. The Sun circles its centre once every ~230 million years.',[['Diameter','≈ 100,000 light-years'],['Stars','100–400 billion'],['Sun’s distance from centre','≈ 26,000 light-years']]],
 ['andromeda','Andromeda (M31)','Spiral galaxy',V(2600,200,-2100),800,'#ffe0a0','Nearest large galaxy, with about a trillion stars. A merger with the Milky Way is expected in 4–5 billion years.',[['Distance','2.5 million light-years'],['Diameter','≈ 220,000 light-years']],'#8fb4ff',[.5,.3]],
@@ -139,6 +144,28 @@ const DF=[];{const N=450,p=new Float32Array(N*3),c=new Float32Array(N*3),M=['Spi
  const dp=dots(p,c,3.4,false,.9);gal.add(dp);window.dfPts=dp}
 /* asteroid belt between Mars and Jupiter */
 const belt=(()=>{const N=2200,p=new Float32Array(N*3),c=new Float32Array(N*3);for(let i=0;i<N;i++){const r=26+rnd()*8+gauss()*.6,a=rnd()*TAU;p.set([Math.cos(a)*r,gauss()*.5,Math.sin(a)*r],i*3);const b=.35+rnd()*.5;c.set([b,b*.92,b*.8],i*3)}return dots(p,c,1.6,false,.8)})();space.add(belt);
+/* nebulae */
+const NEB=[.0,.58,.75,.9,.08].map((h,i)=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),im=x.createImageData(128,128),d=im.data,col=new THREE.Color().setHSL(h,.8,.55);for(let j=0;j<128;j++)for(let k=0;k<128;k++){const n=fbm(k/32+i*7,j/32+i*3,64,4),f=Math.max(0,1-Math.hypot(k-64,j-64)/64),a=clamp((n-.38)*3,0,1)*f*f,o=(j*128+k)*4;d[o]=col.r*255;d[o+1]=col.g*255;d[o+2]=col.b*255;d[o+3]=a*255}x.putImageData(im,0,0);return new THREE.CanvasTexture(c)});
+for(let i=0;i<26;i++){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:NEB[i%5],transparent:true,opacity:.35+rnd()*.25,blending:THREE.AdditiveBlending,depthWrite:false,rotation:rnd()*TAU})),a=rnd()*TAU,r=220+rnd()*1100,sz=300+rnd()*1100;m.position.set(Math.cos(a)*r-300,gauss()*50,Math.sin(a)*r);m.scale.set(sz,sz,1);space.add(m)}
+/* black holes, white hole, wormholes */
+function ringM(i,o,tex){const g=new THREE.RingGeometry(i,o,128,4),p=g.attributes.position,uv=g.attributes.uv;for(let k=0;k<p.count;k++)uv.setXY(k,(Math.hypot(p.getX(k),p.getY(k))-i)/(o-i),(k%129)/128);return new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}))}
+const DISCTEX=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d'),q=x.createLinearGradient(0,0,256,0);[[0,'rgba(255,250,230,0)'],[.05,'rgba(255,245,200,1)'],[.25,'rgba(255,170,60,.95)'],[.6,'rgba(190,60,20,.6)'],[1,'rgba(90,20,10,0)']].forEach(s=>q.addColorStop(s[0],s[1]));x.fillStyle=q;x.fillRect(0,0,256,256);x.globalCompositeOperation='destination-out';for(let i=0;i<320;i++){x.fillStyle='rgba(0,0,0,'+(.15+rnd()*.35)+')';x.fillRect(rnd()*200,rnd()*256,40+rnd()*160,1+rnd()*3)}return T(c)})();
+const RINGT=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.shadowColor='#ffb860';x.shadowBlur=18;x.strokeStyle='#fff3d0';x.lineWidth=4;x.beginPath();x.arc(128,128,70,0,TAU);x.stroke();return new THREE.CanvasTexture(c)})();
+function blackHole(R,jet){const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.SphereGeometry(R,32,24),new THREE.MeshBasicMaterial({color:0})));
+ const d=ringM(R*1.7,R*5,DISCTEX);d.rotation.x=Math.PI/2-.25;g.add(d);g.userData.disc=d;
+ const pr=new THREE.Sprite(new THREE.SpriteMaterial({map:RINGT,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));pr.scale.set(R*6.2,R*6.2,1);g.add(pr,spr(0xff9a40,R*14,.35));
+ if(jet)for(const k of[1,-1]){const m=new THREE.Mesh(new THREE.ConeGeometry(R*1.2,R*26,24,1,true),new THREE.MeshBasicMaterial({color:0x6aa8ff,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=k*R*13;if(k<0)m.rotation.x=Math.PI;g.add(m)}return g}
+function wormhole(R){const m=new THREE.ShaderMaterial({uniforms:{t:{value:0}},vertexShader:'varying vec2 vu;void main(){vu=uv-.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform float t;varying vec2 vu;void main(){float r=length(vu)*2.;if(r>1.)discard;float a=atan(vu.y,vu.x);float s=sin(a*5.+log(r+.02)*9.-t*2.5)*.5+.5;float core=pow(1.-r,2.);vec3 c=mix(vec3(.05,.1,.5),vec3(.6,.3,1.),s)*(.4+core*1.6)+vec3(.8,.9,1.)*pow(1.-r,6.);gl_FragColor=vec4(c,smoothstep(1.,.85,r)*(.35+.65*(1.-r)));}',transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+ const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.CircleGeometry(R,64),m),new THREE.Mesh(new THREE.TorusGeometry(R,R*.07,16,96),new THREE.MeshBasicMaterial({color:0x8fd0ff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending})),spr(0x7a6aff,R*5,.4));g.userData.m=m;return g}
+const wh=new THREE.Group(),WN=700,wv=[];{const wc=new Float32Array(WN*3);for(let i=0;i<WN;i++){wv.push({d:V(rnd()*2-1,rnd()*2-1,rnd()*2-1).normalize(),l:rnd()});wc.set([.7+rnd()*.3,.85,1],i*3)}
+ var whPts=dots(new Float32Array(WN*3),wc,3,false,.9);wh.add(new THREE.Mesh(new THREE.SphereGeometry(10,32,24),new THREE.MeshBasicMaterial({color:0xffffff})),spr(0xaad4ff,120,.9),spr(0xffffff,50,1),whPts)}
+const EX=[['bh_sgra','Sagittarius A*','Supermassive black hole',blackHole(14,false),MW.position.clone(),14,'The black hole at the centre of the Milky Way. Imaged by the Event Horizon Telescope in 2022.',[['Mass','≈ 4.3 million Suns'],['Distance','≈ 26,000 light-years']]],
+['bh_m87','M87*','Supermassive black hole',blackHole(30,true),V(-3600,-600,6400),30,'The first black hole ever imaged (2019). Its jet stretches thousands of light-years.',[['Mass','≈ 6.5 billion Suns'],['Distance','53 million light-years']]],
+['bh_cyg','Cygnus X-1','Stellar black hole',blackHole(4,false),V(-140,8,110),4,'One of the first black holes identified. It pulls gas off a blue supergiant companion.',[['Mass','≈ 21 Suns'],['Distance','≈ 7,200 light-years']]],
+['whitehole','White hole (hypothetical)','Hypothetical object',wh,V(-1800,350,2600),10,'A white hole is the time-reverse of a black hole: nothing can enter, matter and light pour out. General relativity allows the mathematics, but none has ever been observed and many physicists doubt they exist.',[['Status','Never observed'],['Shown here','Artist’s impression']]],
+['worm_a','Wormhole mouth A (hypothetical)','Hypothetical object',wormhole(22),V(220,40,-260),22,'An Einstein–Rosen bridge would be a tunnel linking two places in space-time. The equations allow it, but it would need exotic matter to stay open, and none has ever been seen.',[['Status','Never observed'],['Shown here','Artist’s impression']]],
+['worm_b','Wormhole mouth B (hypothetical)','Hypothetical object',wormhole(22),V(-3000,-700,-3600),22,'The other end of the hypothetical wormhole, placed here in a distant region. In theory, entering one mouth would lead out of the other.',[['Status','Never observed']]]];
+EX.forEach(e=>{e[3].position.copy(e[4]);space.add(e[3]);add({id:e[0],name:e[1],kind:'exotic',type:e[2],obj:e[3],r:e[5],fly:e[5]*7,col:'#ffb070',desc:e[6],rows:e[7]})});
 /* ground & sky-only objects */
 const ground=new THREE.Group();ground.visible=false;scene.add(ground);
 const gmat=new THREE.MeshBasicMaterial({color:0x04060b,side:THREE.DoubleSide});
@@ -182,13 +209,13 @@ function hit(x,y){let b=null,bs=1e9;const pxr=Math.tan(camera.fov*Math.PI/360),W
 $('go').onclick=()=>sel&&flyTo(sel);$('x').onclick=()=>select(null);
 $('bd').onclick=()=>$('disc').hidden=false;$('dx').onclick=()=>$('disc').hidden=true;$('bn').onclick=()=>$('nav').hidden=!$('nav').hidden;
 $('cg').onchange=e=>gal.visible=e.target.checked;$('cc').onchange=e=>cons.visible=e.target.checked;$('sp').oninput=e=>speed=+e.target.value;
-const NV=[['Solar System',['sun','mercury','venus','earth','moon','mars','jupiter','saturn','uranus','neptune']],['Galaxies',GD.map(g=>g[0])]];
+const NV=[['Solar System',['sun','mercury','venus','earth','moon','mars','jupiter','saturn','uranus','neptune']],['Galaxies',GD.map(g=>g[0])],['Black holes & beyond',EX.map(e=>e[0])]];
 $('nav').innerHTML=NV.map(s=>'<h3>'+s[0]+'</h3>'+s[1].map(i=>'<button data-i="'+i+'">'+byId[i].name+'</button>').join('')).join('');
 $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(sky)exitSky();setTimeout(()=>visit(byId[b.dataset.i]),sky?500:0);$('nav').hidden=true}};
 const DISC=[['6,445','Confirmed exoplanets','Planets around other stars, per the NASA Exoplanet Archive (8 Oct 2026). Thousands more candidates await confirmation.'],['≈ 1.8 billion','Stars mapped by Gaia','Positions and motions for about 1.8 billion sources in the Milky Way (data release 3).'],['≈ 9,000','Naked-eye stars','Brighter than magnitude 6.5, across the whole sky.'],['1.4 million+','Asteroids and minor planets','Catalogued by the Minor Planet Center.'],['100–400 billion','Stars in the Milky Way','An estimate; most are too faint or hidden by dust.'],['200 billion – 2 trillion','Galaxies in the observable universe','Estimates vary by method. Millions have measured distances.'],['≈ 93 billion ly','Width of the observable universe','13.8 billion years of light travel, plus expansion.'],['2','Black holes imaged','M87* (2019) and Sagittarius A* (2022), by the Event Horizon Telescope.']];
 $('dl').innerHTML=DISC.map(r=>'<div class="row"><b>'+r[0]+'</b><span>'+r[1]+'<i>'+r[2]+'</i></span></div>').join('');
 /* labels */
-const LB={};items.filter(i=>['planet','galaxy','star'].includes(i.kind)&&!i.src).forEach(i=>{const d=document.createElement('div');d.className='lb';d.textContent=i.name;$('labels').appendChild(d);LB[i.id]=d});
+const LB={};items.filter(i=>['planet','galaxy','star','exotic'].includes(i.kind)&&!i.src).forEach(i=>{const d=document.createElement('div');d.className='lb';d.textContent=i.name;$('labels').appendChild(d);LB[i.id]=d});
 /* preview */
 const pv=$('pv').getContext('2d');
 function preview(it,t){const w=300,h=110,cx=w/2,cy=h/2;pv.fillStyle='#02030a';pv.fillRect(0,0,w,h);const k=it.kind;
@@ -203,7 +230,7 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
  {const ep=planets.earth.grp.position,ma=TAU*TT/27.32;planets.earth.moon.position.set(ep.x+Math.cos(ma)*3,0,ep.z+Math.sin(ma)*3)}
  byId.sun.obj.rotation.y=tm*.02;
  bgStars.material.size=2.4+Math.sin(tm*2.3)*.3;
- if(!sky){const s=speed;gal.children.forEach((g,i)=>{if(g.userData.pt)g.userData.pt.rotation.y+=dt*s*(.05+(i%3)*.02)});belt.rotation.y+=dt*s*.04;EXPN+=dt*s*.004;dfPts.scale.setScalar(1+EXPN)}
+ if(!sky){const s=Math.max(speed,.3);gal.children.forEach((g,i)=>{if(g.userData.pt)g.userData.pt.rotation.y+=dt*s*(.05+(i%3)*.02)});belt.rotation.y+=dt*s*.04;EXPN+=dt*s*.004;dfPts.scale.setScalar(1+EXPN)}
  controls.autoRotate=auto&&!tw&&!sky;
  if(sky){/* Earth spin + observer at 40°N */
   const lat=40*Math.PI/180;spin=TAU*TT;const qy=new THREE.Quaternion().setFromAxisAngle(V(0,1,0),-spin),qz=new THREE.Quaternion().setFromAxisAngle(V(0,0,1),Math.PI/2-lat);celestial.quaternion.copy(qz).multiply(qy);
@@ -228,6 +255,10 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
   if(!tw&&focus.id==='earth'&&dist<2.1&&!sky){enterSky()}
   const d0=camera.position.length();$('st').textContent=d0<140?'Solar System':d0<1500?'Milky Way':'Intergalactic space';
   $('rd').textContent=focus.name+(focus.rows&&focus.rows[0]?' · '+focus.rows[0][0]+': '+focus.rows[0][1]:'')}
+ for(const it of STI){const k=it.base*(1+.18*Math.sin(tm*2.4+it.ph));it.obj.scale.set(k,k,1)}
+ {const bo=bgStars.material.opacity;brA.material.opacity=bo*(.55+.45*Math.sin(tm*2.1));brB.material.opacity=bo*(.55+.45*Math.sin(tm*2.1+2.4))}
+ EX.forEach(e=>{const g=e[3];if(g.userData.disc)g.userData.disc.rotation.z+=dt*.6*Math.max(speed,.3);if(g.userData.m){g.userData.m.uniforms.t.value=tm;g.lookAt(camera.position)}});
+ {const a=whPts.geometry.attributes.position;for(let i=0;i<WN;i++){const l=(wv[i].l+=dt*.22)%1,r=10+l*l*130,d=wv[i].d;a.setXYZ(i,d.x*r,d.y*r,d.z*r)}a.needsUpdate=true}
  camera.updateMatrixWorld();
  if(sel&&!$('info').hidden)preview(sel,tm);
  const W=innerWidth,H=innerHeight;
