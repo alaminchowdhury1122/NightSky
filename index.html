@@ -59,7 +59,7 @@ function makeTex(id,seed){const w=512,h=256,c=document.createElement('canvas');c
   if(id==='earth'){const m=fbm(u*1.3+7,v*1.3+7,8,4);if(n>.5){const z=clamp((n-.5)*6,0,1),dr=clamp((m-.45)*5,0,1);r=50+z*40+dr*100;g=100+z*10-dr*10;b=40+dr*30}else{const s=clamp(n*2,0,1);r=8+s*20;g=30+s*70;b=90+s*100}const ic=clamp((lat-.83-n*.08)*12,0,1);r+=(240-r)*ic;g+=(245-g)*ic;b+=(250-b)*ic}
   else if(id==='clouds'){const k=clamp((fbm(u*1.1+3,v*1.4+3,8,5)-.5)*4.5,0,1);r=g=b=255;a=k*230}
   else if(id==='mars'){const m=fbm(u*1.7+9,v*1.7,8,4),k=.55+n*.8;r=200*k;g=100*k;b=60*k;if(m<.42){r*=.6;g*=.65;b*=.7}const ic=clamp((lat-.9)*12,0,1);r+=(245-r)*ic;g+=(245-g)*ic;b+=(250-b)*ic}
-  else if(id==='mercury'||id==='moon'){const k=.35+n*.7+Math.abs(vn(u*6,v*6,48)-.5)*.5;r=150*k;g=150*k;b=145*k}
+  else if(id==='mercury'||id==='moon'||id==='pluto'){const k=.35+n*.7+Math.abs(vn(u*6,v*6,48)-.5)*.5;r=150*k;g=150*k;b=145*k}
   else if(id==='venus'){const k=.8+.35*fbm(u+n*2,v*2+n,8,4);r=232*k;g=200*k;b=135*k}
   else if(id==='sun'){const k=.65+.7*fbm(u*3,v*3,24,4);r=255;g=150*k+60;b=30*k*k}
   else{const J=id==='jupiter',S=id==='saturn',U=id==='uranus',t=Math.sin(j/h*Math.PI*(J?15:S?11:U?4:6)+n*(J?3.2:2))*.5+.5;
@@ -87,7 +87,8 @@ const PL=[['mercury','Mercury',.387,88,58.6,2440,.55,'#b8aa9a','167','3.7','176 
 ['jupiter','Jupiter',5.203,4333,.414,69911,3.2,'#d9b48a','−110','24.8','9 h 56 min','11.9 years','Gas giant with more than twice the mass of all other planets combined.'],
 ['saturn','Saturn',9.537,10759,.444,58232,2.7,'#e8d29a','−140','10.4','10 h 34 min','29.4 years','Its rings are mostly water ice. The planet is less dense than water.'],
 ['uranus','Uranus',19.19,30687,-.718,25362,1.7,'#9fe0e6','−195','8.9','17 h 14 min (spins backwards)','84 years','Tilted about 98°, it rolls around the Sun on its side.'],
-['neptune','Neptune',30.07,60190,.671,24622,1.7,'#4a63e0','−200','11.2','16 h 6 min','165 years','The windiest planet, with winds above 2,000 km/h.']];
+['neptune','Neptune',30.07,60190,.671,24622,1.7,'#4a63e0','−200','11.2','16 h 6 min','165 years','The windiest planet, with winds above 2,000 km/h.'],
+['pluto','Pluto',39.48,90560,-6.39,1188,.35,'#c8b6a2','−229','0.62','6.4 Earth days (spins backwards)','248 years','Dwarf planet in the Kuiper Belt. New Horizons flew past in 2015 and found a heart-shaped plain of nitrogen ice.']];
 const items=[],byId={};const add=o=>{items.push(o);byId[o.id]=o;return o};
 const space=new THREE.Group(),celestial=new THREE.Group();scene.add(space,celestial);
 /* Sun */
@@ -109,7 +110,7 @@ PL.forEach(([id,name,a,per,rot,rkm,rd,col,temp,g,day,year,fact],i)=>{
   const c=document.createElement('canvas');c.width=256;c.height=4;const x=c.getContext('2d'),q=x.createLinearGradient(0,0,256,0);[[0,'rgba(190,170,130,0)'],[.1,'rgba(200,180,140,.5)'],[.3,'rgba(240,222,175,.85)'],[.5,'rgba(120,100,80,.12)'],[.62,'rgba(235,210,170,.8)'],[.9,'rgba(190,170,130,.4)'],[1,'rgba(190,170,130,0)']].forEach(s=>q.addColorStop(s[0],s[1]));x.fillStyle=q;x.fillRect(0,0,256,4);
   const ring=new THREE.Mesh(rg,new THREE.MeshBasicMaterial({map:T(c),side:THREE.DoubleSide,transparent:true,depthWrite:false}));ring.rotation.x=Math.PI/2.2;grp.add(ring)}
  space.add(grp);
- add({id,name,kind:'planet',type:'Planet',obj:grp,r:rd,fly:rd*4.2,tex:tc,col,desc:fact,rows:[['Distance from Sun',a+' AU ('+Math.round(a*AUKM)+' million km)'],['Diameter',(rkm*2).toLocaleString('en-US')+' km'],['Year',year],['Day',day],['Mean temperature',temp+' °C'],['Gravity',g+' m/s²']]})});
+ add({id,name,kind:'planet',type:id==='pluto'?'Dwarf planet':'Planet',obj:grp,r:rd,fly:rd*4.2,tex:tc,col,desc:fact,rows:[['Distance from Sun',a+' AU ('+Math.round(a*AUKM)+' million km)'],['Diameter',(rkm*2).toLocaleString('en-US')+' km'],['Year',year],['Day',day],['Mean temperature',temp+' °C'],['Gravity',g+' m/s²']]})});
 /* Galilean moons */
 const MT=T(byId.moon.tex),GM=[['io','Io',1.769,7.2,.22,'#e8d27a','3,643 km','The most volcanically active body in the Solar System.'],['europa','Europa',3.551,8.6,.19,'#d8cfc0','3,122 km','Hides a salty ocean beneath its ice shell, a top target in the search for life.'],['ganymede','Ganymede',7.155,10.4,.3,'#a39886','5,268 km','The largest moon in the Solar System, bigger than Mercury, with its own magnetic field.'],['callisto','Callisto',16.69,12.6,.28,'#75695c','4,821 km','An ancient, heavily cratered surface that has barely changed in billions of years.']];
 const gms=GM.map(g=>{const m=new THREE.Mesh(new THREE.SphereGeometry(g[4],32,24),new THREE.MeshStandardMaterial({map:MT,color:g[5],roughness:1}));space.add(m);add({id:g[0],name:g[1],kind:'planet',type:'Moon of Jupiter',obj:m,r:g[4],fly:g[4]*5,tex:byId.moon.tex,col:g[5],desc:g[7],rows:[['Diameter',g[6]],['Orbit around Jupiter',g[2]+' days']]});return m});
@@ -164,21 +165,69 @@ for(let i=0;i<26;i++){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:NEB
 function ringM(i,o,tex){const g=new THREE.RingGeometry(i,o,128,4),p=g.attributes.position,uv=g.attributes.uv;for(let k=0;k<p.count;k++)uv.setXY(k,(Math.hypot(p.getX(k),p.getY(k))-i)/(o-i),(k%129)/128);return new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:tex,transparent:true,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}))}
 const DISCTEX=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d'),q=x.createLinearGradient(0,0,256,0);[[0,'rgba(255,250,230,0)'],[.05,'rgba(255,245,200,1)'],[.25,'rgba(255,170,60,.95)'],[.6,'rgba(190,60,20,.6)'],[1,'rgba(90,20,10,0)']].forEach(s=>q.addColorStop(s[0],s[1]));x.fillStyle=q;x.fillRect(0,0,256,256);x.globalCompositeOperation='destination-out';for(let i=0;i<320;i++){x.fillStyle='rgba(0,0,0,'+(.15+rnd()*.35)+')';x.fillRect(rnd()*200,rnd()*256,40+rnd()*160,1+rnd()*3)}return T(c)})();
 const RINGT=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.shadowColor='#ffb860';x.shadowBlur=18;x.strokeStyle='#fff3d0';x.lineWidth=4;x.beginPath();x.arc(128,128,70,0,TAU);x.stroke();return new THREE.CanvasTexture(c)})();
-function blackHole(R,jet){const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.SphereGeometry(R,32,24),new THREE.MeshBasicMaterial({color:0})));
- const d=ringM(R*1.7,R*5,DISCTEX);d.rotation.x=Math.PI/2-.25;g.add(d);g.userData.disc=d;
- const pr=new THREE.Sprite(new THREE.SpriteMaterial({map:RINGT,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));pr.scale.set(R*6.2,R*6.2,1);g.add(pr,spr(0xff9a40,R*14,.35));
- if(jet)for(const k of[1,-1]){const m=new THREE.Mesh(new THREE.ConeGeometry(R*1.2,R*26,24,1,true),new THREE.MeshBasicMaterial({color:0x6aa8ff,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.position.y=k*R*13;if(k<0)m.rotation.x=Math.PI;g.add(m)}return g}
+function blackHole(R,jet,inc){const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.SphereGeometry(R,32,24),new THREE.MeshBasicMaterial({color:0})));
+ const m=new THREE.ShaderMaterial({uniforms:{t:{value:0},inc:{value:inc||1.3}},vertexShader:'varying vec2 vu;void main(){vu=uv*2.0-1.0;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+ fragmentShader:`uniform float t;uniform float inc;varying vec2 vu;
+ float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+ float nz(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1.0,0.0)),f.x),mix(h(i+vec2(0.0,1.0)),h(i+vec2(1.0,1.0)),f.x),f.y);}
+ vec3 disc(float rd,float ph){float k=smoothstep(.27,.33,rd)*smoothstep(.98,.55,rd);float sw=ph+t*1.6/pow(rd*3.0,1.5);float tur=.5+.5*nz(vec2(sw*3.0,rd*28.0))*nz(vec2(sw*7.0+3.0,rd*60.0))*1.6;float dop=1.0+.75*cos(ph+1.2);vec3 c=mix(vec3(1.0,.95,.85),vec3(1.0,.42,.1),smoothstep(.3,.9,rd));return c*k*tur*dop*pow(.3/max(rd,.05),1.2)*1.5;}
+ void main(){vec2 p=vu;float r=length(p);if(r>1.0)discard;float si=sin(inc),a=atan(p.y,p.x);vec3 col=vec3(0.0);
+  vec2 q=vec2(p.x,p.y/si);float rd=length(q),ph=atan(q.y,q.x);
+  col+=disc(rd,ph)*(p.y<0.0?1.0:step(.2,r));
+  float lm=smoothstep(.2,.24,r)*(1.0-smoothstep(.3,.58,r))*(.5+.5*abs(sin(a)));
+  col+=disc(.3+(r-.2)*1.7,a+3.14159)*lm*1.3;
+  col+=vec3(1.0,.85,.6)*exp(-pow((r-.213)/.007,2.0))*1.8;
+  gl_FragColor=vec4(col,1.0);}`,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false});
+ const bb=new THREE.Mesh(new THREE.PlaneGeometry(R*10,R*10),m);bb.renderOrder=5;g.add(bb,spr(0xff9a40,R*14,.22));g.userData.m=m;g.userData.bb=bb;
+ if(jet)for(const k of[1,-1]){const c=new THREE.Mesh(new THREE.ConeGeometry(R*1.2,R*26,24,1,true),new THREE.MeshBasicMaterial({color:0x6aa8ff,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));c.position.y=k*R*13;if(k<0)c.rotation.x=Math.PI;g.add(c)}return g}
 function wormhole(R){const m=new THREE.ShaderMaterial({uniforms:{t:{value:0}},vertexShader:'varying vec2 vu;void main(){vu=uv-.5;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform float t;varying vec2 vu;void main(){float r=length(vu)*2.;if(r>1.)discard;float a=atan(vu.y,vu.x);float s=sin(a*5.+log(r+.02)*9.-t*2.5)*.5+.5;float core=pow(1.-r,2.);vec3 c=mix(vec3(.05,.1,.5),vec3(.6,.3,1.),s)*(.4+core*1.6)+vec3(.8,.9,1.)*pow(1.-r,6.);gl_FragColor=vec4(c,smoothstep(1.,.85,r)*(.35+.65*(1.-r)));}',transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
  const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.CircleGeometry(R,64),m),new THREE.Mesh(new THREE.TorusGeometry(R,R*.07,16,96),new THREE.MeshBasicMaterial({color:0x8fd0ff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending})),spr(0x7a6aff,R*5,.4));g.userData.m=m;return g}
 const wh=new THREE.Group(),WN=700,wv=[];{const wc=new Float32Array(WN*3);for(let i=0;i<WN;i++){wv.push({d:V(rnd()*2-1,rnd()*2-1,rnd()*2-1).normalize(),l:rnd()});wc.set([.7+rnd()*.3,.85,1],i*3)}
  var whPts=dots(new Float32Array(WN*3),wc,3,false,.9);wh.add(new THREE.Mesh(new THREE.SphereGeometry(10,32,24),new THREE.MeshBasicMaterial({color:0xffffff})),spr(0xaad4ff,120,.9),spr(0xffffff,50,1),whPts)}
-const EX=[['bh_sgra','Sagittarius A*','Supermassive black hole',blackHole(14,false),MW.position.clone(),14,'The black hole at the centre of the Milky Way. Imaged by the Event Horizon Telescope in 2022.',[['Mass','≈ 4.3 million Suns'],['Distance','≈ 26,000 light-years']]],
-['bh_m87','M87*','Supermassive black hole',blackHole(30,true),V(-3600,-600,6400),30,'The first black hole ever imaged (2019). Its jet stretches thousands of light-years.',[['Mass','≈ 6.5 billion Suns'],['Distance','53 million light-years']]],
-['bh_cyg','Cygnus X-1','Stellar black hole',blackHole(4,false),V(-140,8,110),4,'One of the first black holes identified. It pulls gas off a blue supergiant companion.',[['Mass','≈ 21 Suns'],['Distance','≈ 7,200 light-years']]],
+const EX=[['bh_sgra','Sagittarius A*','Supermassive black hole',blackHole(14,false,1.35),MW.position.clone(),14,'The black hole at the centre of the Milky Way. Imaged by the Event Horizon Telescope in 2022.',[['Mass','≈ 4.3 million Suns'],['Distance','≈ 26,000 light-years']]],
+['bh_m87','M87*','Supermassive black hole',blackHole(30,true,1.0),V(-3600,-600,6400),30,'The first black hole ever imaged (2019). Its jet stretches thousands of light-years.',[['Mass','≈ 6.5 billion Suns'],['Distance','53 million light-years']]],
+['bh_cyg','Cygnus X-1','Stellar black hole',blackHole(4,false,1.45),V(-140,8,110),4,'One of the first black holes identified. It pulls gas off a blue supergiant companion.',[['Mass','≈ 21 Suns'],['Distance','≈ 7,200 light-years']]],
 ['whitehole','White hole (hypothetical)','Hypothetical object',wh,V(-1800,350,2600),10,'A white hole is the time-reverse of a black hole: nothing can enter, matter and light pour out. General relativity allows the mathematics, but none has ever been observed and many physicists doubt they exist.',[['Status','Never observed'],['Shown here','Artist’s impression']]],
 ['worm_a','Wormhole mouth A (hypothetical)','Hypothetical object',wormhole(22),V(220,40,-260),22,'An Einstein–Rosen bridge would be a tunnel linking two places in space-time. The equations allow it, but it would need exotic matter to stay open, and none has ever been seen.',[['Status','Never observed'],['Shown here','Artist’s impression']]],
 ['worm_b','Wormhole mouth B (hypothetical)','Hypothetical object',wormhole(22),V(-3000,-700,-3600),22,'The other end of the hypothetical wormhole, placed here in a distant region. In theory, entering one mouth would lead out of the other.',[['Status','Never observed']]]];
 EX.forEach(e=>{e[3].position.copy(e[4]);space.add(e[3]);add({id:e[0],name:e[1],kind:'exotic',type:e[2],obj:e[3],r:e[5],fly:e[5]*7,col:'#ffb070',desc:e[6],rows:e[7]})});
+/* Mars moons, Halley's Comet, "You are here", light-travel time */
+const MM=[['phobos','Phobos',.319,1.5,.07,'#8a7a6a','Orbits Mars in about 7.6 hours, closer to its planet than any other moon.','22 km'],['deimos','Deimos',1.263,2.1,.05,'#9a8a7a','The smaller, outer moon of Mars.','12 km']].map(g=>{const m=new THREE.Mesh(new THREE.SphereGeometry(g[4],20,14),new THREE.MeshStandardMaterial({map:MT,color:g[5],roughness:1}));planets.mars.grp.add(m);add({id:g[0],name:g[1],kind:'planet',type:'Moon of Mars',obj:m,r:g[4],fly:g[4]*5,tex:byId.moon.tex,col:g[5],desc:g[6],rows:[['Orbits','Mars'],['Orbital period',g[2]+' days'],['Diameter',g[7]]]}).small=true;return{g,m}});
+const HAL={a:17.834,e:.96714,P:27503,d0:-5077.6,w:171*Math.PI/180},halDisp=r=>4+14*Math.pow(r,.55);
+function halAt(E){const r=HAL.a*(1-HAL.e*Math.cos(E)),nu=2*Math.atan2(Math.sqrt(1+HAL.e)*Math.sin(E/2),Math.sqrt(1-HAL.e)*Math.cos(E/2)),R=halDisp(r),th=HAL.w-nu;return{r,p:V(Math.cos(th)*R,0,-Math.sin(th)*R)}}
+const halG=new THREE.Group(),halTail=new THREE.Mesh(new THREE.ConeGeometry(1.2,1,16,1,true),new THREE.MeshBasicMaterial({color:0x9fd0ff,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+halG.add(spr(0xbfe6ff,6,.9),new THREE.Mesh(new THREE.SphereGeometry(.35,12,8),new THREE.MeshBasicMaterial({color:0xdddddd})),halTail);space.add(halG);
+{const pt=[];for(let k=0;k<240;k++)pt.push(halAt(k/240*TAU).p);space.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pt),new THREE.LineBasicMaterial({color:0x7fb0ff,transparent:true,opacity:.2})))}
+add({id:'halley',name:'Halley’s Comet',kind:'planet',type:'Periodic comet',obj:halG,r:.8,fly:14,tex:byId.moon.tex,col:'#bfe6ff',desc:'Returns to the inner Solar System about every 75–76 years, growing a tail near the Sun. Its orbit is drawn flat here, and it is far out now, so the tail is faint.',rows:[['Orbital period','≈ 75.3 years'],['Last perihelion','9 Feb 1986'],['Next perihelion','≈ July 2061'],['Nucleus','≈ 15 × 8 km']]}).small=true;
+const here=new THREE.Sprite(new THREE.SpriteMaterial({map:RINGT,color:0x66ffcc,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));space.add(here);
+const hereL=document.createElement('div');hereL.className='lb';hereL.textContent='You are here (Sun, ≈26,000 ly from the galactic centre)';$('labels').appendChild(hereL);
+const LY={milky:26000,andromeda:2.5e6,triangulum:2.7e6,lmc:160000,sombrero:2.9e7,whirlpool:3.1e7,m87:5.3e7,bh_sgra:26000,bh_m87:5.3e7,bh_cyg:7200,crab:6500,omega:17000,ring:2300,quasar:2.4e9,gw:1.3e9};
+if(typeof ST!=='undefined')ST.forEach(q=>LY['s'+q[0]]=q[5]);
+const fmtT=t=>t<90?t.toFixed(1)+' s':t<5400?(t/60).toFixed(1)+' min':t<172800?(t/3600).toFixed(1)+' hours':t<6.3e7?(t/86400).toFixed(0)+' days':(t/3.156e7).toLocaleString('en-US',{maximumFractionDigits:0})+' years';
+function lightText(it){const id=it.src||it.id;if(id==='earth'||it.kind==='exo')return'';if(LY[id])return fmtT(LY[id]*3.156e7);if(id==='sun')return fmtT(499);if(id==='moon')return fmtT(1.28);
+ const mo=MM.find(m=>m.g[0]===id),pid=mo?'mars':id;if(planets[pid]&&EL[pid]){const d=DNOW+TT,A=hel(pid,d),E=hel('earth',d),rr=planets[pid].a;return fmtT(Math.hypot(A.r*Math.cos(A.lam)-E.r*Math.cos(E.lam),A.r*Math.sin(A.lam)-E.r*Math.sin(E.lam))*499)}return''}
+/* more objects: pulsar, quasar, merging black holes, globular cluster, planetary nebula */
+const AB=(c,o)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+function ex(id,name,type,g,pos,r,desc,rows){g.position.copy(pos);space.add(g);EX.push([id,name,type,g,pos,r,desc,rows]);add({id,name,kind:'exotic',type,obj:g,r,fly:r*7,col:'#ffb070',desc,rows})}
+{const g=new THREE.Group(),pv=new THREE.Group(),bm=new THREE.Group();
+ for(const k of[1,-1]){const c=new THREE.Mesh(new THREE.ConeGeometry(2.4,40,20,1,true),AB(0x8fc8ff,.45));c.position.y=k*20;if(k>0)c.rotation.x=Math.PI;bm.add(c)}
+ bm.rotation.z=.5;pv.add(bm);const nb=new THREE.Sprite(new THREE.SpriteMaterial({map:NEB[0],color:0xffa060,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}));nb.scale.set(90,90,1);
+ g.add(new THREE.Mesh(new THREE.SphereGeometry(1.2,16,12),new THREE.MeshBasicMaterial({color:0xcfe6ff})),pv,nb,spr(0x9fd0ff,14,.9));g.userData.tick=(dt,t)=>{pv.rotation.y+=dt*9;nb.material.opacity=.62+.1*Math.sin(t*2)};
+ ex('crab','Crab Pulsar','Neutron star (pulsar)',g,V(-190,12,-60),6,'The core of the supernova that Chinese astronomers recorded in 1054. A neutron star about 20 km across that spins roughly 30 times a second. Its beams are drawn much slower here so you can see them.',[['Distance','≈ 6,500 light-years'],['Mass','≈ 1.4 Suns'],['Spin','≈ 30 turns per second']])}
+{const g=new THREE.Group(),jt=[1,-1].map(k=>{const c=new THREE.Mesh(new THREE.ConeGeometry(5,260,20,1,true),AB(0x7fb8ff,.35));c.position.y=k*130;if(k>0)c.rotation.x=Math.PI;return c}),core=spr(0xcfe6ff,260,1,SPK);
+ g.add(...jt,core,spr(0x8fb4ff,420,.35),spr(0xffffff,60,1));g.userData.tick=(dt,t)=>{core.material.opacity=.85+.15*Math.sin(t*3.1)};
+ ex('quasar','3C 273','Quasar',g,V(6500,900,-5200),40,'The first quasar identified (1963). A supermassive black hole feeding on gas, so bright that it outshines its whole host galaxy, with a jet thousands of light-years long.',[['Distance','≈ 2.4 billion light-years'],['Brightness','over a trillion Suns']])}
+{const g=new THREE.Group(),A=new THREE.Mesh(new THREE.SphereGeometry(4,16,12),new THREE.MeshBasicMaterial({color:0})),B=new THREE.Mesh(new THREE.SphereGeometry(3.3,16,12),new THREE.MeshBasicMaterial({color:0})),fl=spr(0xffffff,90,0),
+ wv=[0,1,2].map(()=>{const m=new THREE.Mesh(new THREE.RingGeometry(.95,1,64),AB(0x9fd0ff,0));m.rotation.x=Math.PI/2;g.add(m);return m});let ph=0;
+ g.add(A,B,fl,spr(0xffb070,40,.25));g.userData.tick=(dt,t)=>{const p=(t%20)/20,d=22*Math.pow(1-p,.4),w=Math.min(2.2/Math.pow(Math.max(d,.5)/22,1.5),40);ph+=dt*w*1.5;
+  A.position.set(Math.cos(ph)*d*.45,0,Math.sin(ph)*d*.45);B.position.set(-Math.cos(ph)*d*.55,0,-Math.sin(ph)*d*.55);
+  wv.forEach((m,i)=>{const s=(t*.5+i/3)%1;m.scale.setScalar(10+s*160);m.material.opacity=.45*(1-s)});fl.material.opacity=p<.995?clamp((p-.94)*16,0,1):0};
+ ex('gw','GW150914 merger','Merging black holes',g,V(5200,-400,3100),14,'Two black holes of about 36 and 29 Suns spiral together and merge. LIGO detected the ripples in space-time on 14 September 2015, the first direct detection of gravitational waves. The inspiral is sped up and repeats here.',[['Distance','≈ 1.3 billion light-years'],['Result','one black hole of ≈ 62 Suns']])}
+{const g=new THREE.Group(),N=2600,p=new Float32Array(N*3),c=new Float32Array(N*3);for(let i=0;i<N;i++){const d=V(gauss(),gauss(),gauss()).multiplyScalar(4*Math.abs(gauss())+.4),b=.5+rnd()*.5;p.set([d.x,d.y,d.z],i*3);c.set([b,b*.85,b*.62],i*3)}
+ g.add(dots(p,c,2,false,.9),spr(0xffe0a0,40,.45));g.userData.tick=dt=>{g.rotation.y+=dt*.1};
+ ex('omega','Omega Centauri','Globular cluster',g,V(-260,-20,250),14,'The largest globular cluster of the Milky Way: a ball of about 10 million old stars packed together.',[['Distance','≈ 17,000 light-years'],['Stars','≈ 10 million']])}
+{const g=new THREE.Group(),t1=new THREE.Mesh(new THREE.TorusGeometry(8,2.4,16,64),AB(0x40d0c0,.5));g.add(t1,new THREE.Mesh(new THREE.TorusGeometry(10.5,1.2,12,64),AB(0xff5a4a,.35)),spr(0xffffff,6,1),spr(0x70e0ff,34,.4));g.rotation.set(1.2,.3,0);g.userData.tick=(dt,t)=>{t1.scale.setScalar(1+.03*Math.sin(t))};
+ ex('ring','Ring Nebula (M57)','Planetary nebula',g,V(150,25,250),12,'A dying Sun-like star has blown off its outer layers, leaving a glowing shell around a white dwarf. Our own Sun will end this way in about 5 billion years.',[['Distance','≈ 2,300 light-years']])}
 /* ground & sky-only objects */
 const ground=new THREE.Group();ground.visible=false;scene.add(ground);
 const gmat=new THREE.MeshBasicMaterial({color:0x04060b,side:THREE.DoubleSide});
@@ -194,6 +243,7 @@ add({id:'kmoon',name:'Moon',kind:'planetsky',type:'Moon of Earth',obj:moonSky,r:
 /* ---------- approximate ephemeris (JPL mean elements) ---------- */
 const D2R=Math.PI/180,jd2d=ms=>ms/86400000+2440587.5-2451545,DNOW=jd2d(Date.now()),OBL=23.439*D2R;
 const EL={mercury:[252.25032,149472.67411,77.4578,.20563,.387098],venus:[181.9791,58517.81539,131.6025,.006777,.72333],earth:[100.46457,35999.37245,102.93768,.01671,1],mars:[-4.55343,19140.30268,-23.94363,.0934,1.52371],jupiter:[34.39644,3034.74613,14.72848,.04839,5.2026],saturn:[49.95424,1222.49362,92.59887,.05386,9.5549],uranus:[313.2381,428.48203,170.95428,.04717,19.2184],neptune:[-55.12003,218.45945,44.96476,.00859,30.1104]};
+EL.pluto=[238.92904,145.20781,224.06892,.24883,39.48212];
 function hel(id,d){const[L0,rt,w,e,a]=EL[id],L=(L0+rt*d/36525)*D2R,M=L-w*D2R;return{lam:L+2*e*Math.sin(M)+1.25*e*e*Math.sin(2*M),r:a*(1-e*Math.cos(M))}}
 const eclDir=(x,y,z)=>V(x,y*Math.sin(OBL)+z*Math.cos(OBL),-(y*Math.cos(OBL)-z*Math.sin(OBL))).normalize();
 /* ---------- state ---------- */
@@ -201,7 +251,7 @@ let EXPN=0,auto=true,it_=0,focus=byId.sun,tw=null,sky=false,TT=0,spin=0,yaw=0,pi
 const wp=it=>it.pos?(it.kind==='deep'?it.pos.clone().multiplyScalar(dfPts.scale.x):it.pos):it.obj.getWorldPosition(new THREE.Vector3());
 function flyTo(it){if(!it.fly)return;const P=wp(it),t0=controls.target.clone(),d0=camera.position.distanceTo(t0),dir=camera.position.clone().sub(t0).normalize();if(dir.lengthSq()<.01)dir.set(0,.4,1).normalize();
  tw={t:0,dur:2.6,t0,d0,d1:it.fly,dir,it};focus=it;controls.minDistance=Math.max(it.r*1.25,.3)}
-function select(it){sel=it;if(!it){$('info').hidden=true;return}$('tp').textContent=it.type;$('nm').textContent=it.name;$('ds').textContent=it.desc;$('rw').innerHTML=it.rows.map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');
+function select(it){sel=it;if(!it){$('info').hidden=true;return}$('tp').textContent=it.type;$('nm').textContent=it.name;$('ds').textContent=it.desc;$('rw').innerHTML=it.rows.concat(lightText(it)?[['Light takes to reach Earth',lightText(it)]]:[]).map(r=>'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>').join('');
  $('go').hidden=!it.fly;$('land').hidden=it.id!=='earth'||sky;$('info').hidden=false}
 function visit(it){select(it);if(!sky)flyTo(it)}
 /* ---------- sky mode ---------- */
@@ -227,10 +277,10 @@ function hit(x,y){let b=null,bs=1e9;const pxr=Math.tan(camera.fov*Math.PI/360),W
 $('go').onclick=()=>sel&&flyTo(sel);$('x').onclick=()=>select(null);
 $('bd').onclick=()=>$('disc').hidden=false;$('dx').onclick=()=>$('disc').hidden=true;$('bn').onclick=()=>$('nav').hidden=!$('nav').hidden;
 $('cg').onchange=e=>gal.visible=e.target.checked;$('cc').onchange=e=>cons.visible=e.target.checked;$('sp').oninput=e=>speed=+e.target.value;
-const NV=[['Solar System',['sun','mercury','venus','earth','moon','mars','jupiter','io','europa','ganymede','callisto','saturn','uranus','neptune']],['Galaxies',GD.map(g=>g[0])],['Black holes & beyond',EX.map(e=>e[0])]];
+const NV=[['Solar System',['sun','mercury','venus','earth','moon','mars','phobos','deimos','jupiter','io','europa','ganymede','callisto','saturn','uranus','neptune','pluto','halley']],['Galaxies',GD.map(g=>g[0])],['Black holes & beyond',EX.map(e=>e[0])]];
 $('nav').innerHTML=NV.map(s=>'<h3>'+s[0]+'</h3>'+s[1].map(i=>'<button data-i="'+i+'">'+byId[i].name+'</button>').join('')).join('');
 $('nav').onclick=e=>{const b=e.target.closest('button');if(b){if(sky)exitSky();setTimeout(()=>visit(byId[b.dataset.i]),sky?500:0);$('nav').hidden=true}};
-const DISC=[['6,445','Confirmed exoplanets','Planets around other stars, per the NASA Exoplanet Archive (8 Oct 2026). Thousands more candidates await confirmation.'],['≈ 1.8 billion','Stars mapped by Gaia','Positions and motions for about 1.8 billion sources in the Milky Way (data release 3).'],['≈ 9,000','Naked-eye stars','Brighter than magnitude 6.5, across the whole sky.'],['1.4 million+','Asteroids and minor planets','Catalogued by the Minor Planet Center.'],['100–400 billion','Stars in the Milky Way','An estimate; most are too faint or hidden by dust.'],['200 billion – 2 trillion','Galaxies in the observable universe','Estimates vary by method. Millions have measured distances.'],['≈ 93 billion ly','Width of the observable universe','13.8 billion years of light travel, plus expansion.'],['2','Black holes imaged','M87* (2019) and Sagittarius A* (2022), by the Event Horizon Telescope.']];
+const DISC=[['6,445','Confirmed exoplanets','Planets around other stars, per the NASA Exoplanet Archive (8 Oct 2026). Thousands more candidates await confirmation.'],['≈ 1.8 billion','Stars mapped by Gaia','Positions and motions for about 1.8 billion sources in the Milky Way (data release 3).'],['≈ 9,000','Naked-eye stars','Brighter than magnitude 6.5, across the whole sky.'],['1.4 million+','Asteroids and minor planets','Catalogued by the Minor Planet Center.'],['100–400 billion','Stars in the Milky Way','An estimate; most are too faint or hidden by dust.'],['200 billion – 2 trillion','Galaxies in the observable universe','Estimates vary by method. Millions have measured distances.'],['≈ 93 billion ly','Width of the observable universe','13.8 billion years of light travel, plus expansion.'],['3,000+','Pulsars catalogued','Spinning neutron stars whose beams sweep across space like lighthouses.'],['≈ 300','Gravitational-wave events','Black hole and neutron star mergers detected by LIGO, Virgo and KAGRA since 2015.'],['2','Black holes imaged','M87* (2019) and Sagittarius A* (2022), by the Event Horizon Telescope.']];
 $('dl').innerHTML=DISC.map(r=>'<div class="row"><b>'+r[0]+'</b><span>'+r[1]+'<i>'+r[2]+'</i></span></div>').join('');
 /* labels */
 const LB={};items.filter(i=>['planet','galaxy','star','exotic'].includes(i.kind)&&!i.src).forEach(i=>{const d=document.createElement('div');d.className='lb';d.textContent=i.name;$('labels').appendChild(d);LB[i.id]=d});
@@ -246,6 +296,9 @@ const clock=new THREE.Clock(),tmp=new THREE.Vector3();
 function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);tm+=dt;
  TT+=dt*(sky?0:speed*20);if(sky)SKT+=dt*TS/86400;
  for(const id in planets){const p=planets[id],a=hel(id,DNOW+TT).lam;p.grp.position.set(Math.cos(a)*p.R,0,Math.sin(a)*p.R);p.mesh.rotation.y=sky?0:TAU*TT/Math.abs(p.rot)*Math.sign(p.rot)*.02+tm*.05*Math.sign(p.rot);if(p.clouds)p.clouds.rotation.y=tm*.07}
+ MM.forEach(o=>{const a=(DNOW+TT)/o.g[2]*TAU;o.m.position.set(Math.cos(a)*o.g[3],0,-Math.sin(a)*o.g[3])});
+ {let M=TAU*((DNOW+TT-HAL.d0)/HAL.P);M-=TAU*Math.floor(M/TAU);let E=Math.PI;for(let i=0;i<14;i++)E-=(E-HAL.e*Math.sin(E)-M)/(1-HAL.e*Math.cos(E));const h=halAt(E),dr=h.p.clone().normalize(),L=clamp(80/(h.r+.8),4,90);halG.position.copy(h.p);halTail.scale.set(1,L,1);halTail.position.copy(dr.clone().multiplyScalar(L/2));halTail.quaternion.setFromUnitVectors(V(0,-1,0),dr);halTail.material.opacity=.45*clamp(1.5-h.r/8,0,1)}
+ {const dd=camera.position.length(),c=V(0,0,0).project(camera),on=!sky&&c.z<1&&dd>200&&dd<4000;here.visible=on;here.scale.setScalar(clamp(dd*.05,30,160));hereL.style.opacity=on?.9:0;if(on)hereL.style.transform='translate('+((c.x+1)/2*innerWidth+10)+'px,'+((1-c.y)/2*innerHeight-10)+'px)'}
  {const ep=planets.earth.grp.position,ma=TAU*TT/27.32;planets.earth.moon.position.set(ep.x+Math.cos(ma)*3,0,ep.z+Math.sin(ma)*3)}
  byId.sun.obj.rotation.y=tm*.02;
  bgStars.material.size=2.4+Math.sin(tm*2.3)*.3;
@@ -273,12 +326,12 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
   const dist=camera.position.distanceTo(P);
   if(!tw&&focus.id==='earth'&&dist<2.1&&!sky){enterSky()}
   const d0=camera.position.length();$('st').textContent=d0<140?'Solar System':d0<1500?'Milky Way':'Intergalactic space';
-  const pl=planets[focus.id],lt=pl?pl.a*8.317:0;$('rd').textContent=focus.name+(focus.rows&&focus.rows[0]?' · '+focus.rows[0][0]+': '+focus.rows[0][1]:'')+(lt?' · sunlight takes '+(lt>=60?(lt/60).toFixed(1)+' hours':Math.floor(lt)+' min '+Math.round((lt%1)*60)+' s')+' to reach it':'')}
+  const pl=planets[focus.id],lt=pl?pl.a*8.317:0;$('rd').textContent=focus.name+(focus.rows&&focus.rows[0]?' · '+focus.rows[0][0]+': '+focus.rows[0][1]:'')+(lt?' · sunlight takes '+(lt>=60?(lt/60).toFixed(1)+' hours':Math.floor(lt)+' min '+Math.round((lt%1)*60)+' s')+' to reach it':(lightText(focus)?' · light takes '+lightText(focus)+' to reach Earth':''))}
  gms.forEach((m,i)=>{const g=GM[i],a=tm*TAU/(g[2]*3)+i,J=planets.jupiter.grp.position;m.position.set(J.x+Math.cos(a)*g[3],J.y,J.z+Math.sin(a)*g[3])});
  LB.sun.textContent=camera.position.length()>260?'Sun · you are here':'Sun';
  for(const it of STI){const k=it.base*(1+.18*Math.sin(tm*2.4+it.ph));it.obj.scale.set(k,k,1)}
  {const bo=bgStars.material.opacity;brA.material.opacity=bo*(.55+.45*Math.sin(tm*2.1));brB.material.opacity=bo*(.55+.45*Math.sin(tm*2.1+2.4))}
- EX.forEach(e=>{const g=e[3];if(g.userData.disc)g.userData.disc.rotation.z+=dt*.6*Math.max(speed,.3);if(g.userData.m){g.userData.m.uniforms.t.value=tm;g.lookAt(camera.position)}});
+ EX.forEach(e=>{const g=e[3];if(g.userData.disc)g.userData.disc.rotation.z+=dt*.6*Math.max(speed,.3);if(g.userData.tick)g.userData.tick(dt,tm);if(g.userData.m){g.userData.m.uniforms.t.value=tm;(g.userData.bb||g).lookAt(camera.position)}});
  {const a=whPts.geometry.attributes.position;for(let i=0;i<WN;i++){const l=(wv[i].l+=dt*.22)%1,r=10+l*l*130,d=wv[i].d;a.setXYZ(i,d.x*r,d.y*r,d.z*r)}a.needsUpdate=true}
  camera.updateMatrixWorld();
  if(sel&&!$('info').hidden)preview(sel,tm);
@@ -304,7 +357,7 @@ const CUR=[['51 Pegasi b','51 Pegasi',50,1995,'Radial Velocity',null,149,4.23,34
 const EXFULL=!!(window.EXO&&window.EXO.length),EXOD=EXFULL?window.EXO:CUR;
 const cls=r=>r==null?'Planet':r<1.25?'Earth-sized':r<2?'Super-Earth':r<6?'Neptune-like':'Gas giant',CC2={'Earth-sized':'#6fb3ff','Super-Earth':'#7fd6a8','Neptune-like':'#6a8cff','Gas giant':'#e0b080','Planet':'#bbbbbb'};
 const exoItem=e=>{const[n,h,ly,y,m,r,ms,pd]=e,c=cls(r);return{id:'x'+n,name:n,kind:'exo',type:'Exoplanet · '+c,col:CC2[c],pr:Math.sqrt(r||3)*2.5,desc:(e[11]||n+' orbits the star '+h+'.')+' Discovered in '+(y||'?')+' by the '+(m||'unknown')+' method.',rows:[['Host star',h],['Distance',ly?ly+' light-years':'unknown'],['Radius',r?r.toFixed(2)+' × Earth':'unknown'],['Mass',ms?ms.toFixed(1)+' × Earth':'unknown'],['Orbit',pd?pd.toFixed(2)+' days':'unknown']]}};
-function renderExo(q){q=(q||'').toLowerCase();const L=EXOD.filter(e=>!q||(e[0]+' '+e[1]).toLowerCase().includes(q));$('en').textContent=(EXFULL?'NASA Exoplanet Archive':'13 famous planets · run exoplanets.py for all')+' · '+L.length+' match';$('el').innerHTML=L.slice(0,150).map(e=>'<button data-i="'+EXOD.indexOf(e)+'">'+e[0]+' <small>'+e[1]+(e[2]?' · '+e[2]+' ly':'')+'</small></button>').join('')}
+function renderExo(q){q=(q||'').toLowerCase();const L=EXOD.filter(e=>!q||(e[0]+' '+e[1]).toLowerCase().includes(q));$('en').textContent=(EXFULL?(window.EXSRC||'NASA Exoplanet Archive'):'13 famous planets · run exoplanets.py for all')+' · '+L.length+' match';$('el').innerHTML=L.slice(0,150).map(e=>'<button data-i="'+EXOD.indexOf(e)+'">'+e[0]+' <small>'+e[1]+(e[2]?' · '+e[2]+' ly':'')+'</small></button>').join('')}
 $('be').onclick=()=>{$('exo').hidden=!$('exo').hidden;$('nav').hidden=true;if(!$('exo').hidden)renderExo($('eq').value)};
 $('eq').oninput=e=>renderExo(e.target.value);$('el').onclick=e=>{const b=e.target.closest('button');if(b)select(exoItem(EXOD[+b.dataset.i]))};
 $('bn').onclick=()=>{$('nav').hidden=!$('nav').hidden;$('exo').hidden=true};
